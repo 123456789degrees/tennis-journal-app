@@ -1,0 +1,20 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Login / Account setup">
+  <p class="screen-label">Screen 1</p>
+  <wired-card elevation="2" style="display:block; padding:1.2rem; max-width:360px;">
+    <h3 style="margin-top:0;">MatchMind</h3>
+    <p><strong>Email</strong></p>
+    <wired-input placeholder="you@email.com" style="width:100%;"></wired-input>
+    <p style="margin-top:0.8rem;"><strong>Password</strong></p>
+    <wired-input type="password" placeholder="••••••" style="width:100%;"></wired-input>
+    <p style="margin-top:0.8rem; font-size:0.85rem;">Under 13? We'll ask for a parent's email.</p>
+    <wired-input placeholder="Parent email (if under 13)" style="width:100%;"></wired-input>
+    <div style="margin-top:1rem; display:flex; gap:0.8rem;">
+      <a href="/home"><wired-button elevation="2">Sign in</wired-button></a>
+      <a href="/home"><wired-button>Create account</wired-button></a>
+    </div>
+  </wired-card>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Sign in / Create account → Home. Failure → inline error here.</p></div>
+</Wireframe>

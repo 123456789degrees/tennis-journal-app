@@ -14,11 +14,11 @@ It records where the project is in the UA Framework process so any agent invocat
 
 ## Current stage
 
-Stage 2 — Analysis
+Done
 
 ## Current pass or activity
 
-Stage 2 — Analysis COMPLETE (all 3 sections done; positioning statement revisited and held). Paused here. **Resume at: Stage 3 — Specification and Wireframes (start with the screen inventory).**
+COMPLETE — all three stages finished. Spec + clickable wireframes built; all scenarios pass.
 
 ## Positioning statement status
 
@@ -47,6 +47,12 @@ A running list. Each entry is a single line: what was completed, and the date.
 - 2026-06-15 Stage 2 §1 — Landscape done (key finding: target players use NO apps; real competition is paper journal + memory)
 - 2026-06-15 Stage 2 §2 — Stakeholders & users done (parents = key stakeholder + adoption lever; app decided private/personal; COPPA handled via parent involvement)
 - 2026-06-15 Stage 2 §3 — JTBD & scenarios done (3 jobs: effortless capture, opponent recall, practice tips; each with a scenario + failure branch; positioning statement revisited and held)
+- 2026-06-15 STAGE 2 — ANALYSIS COMPLETE → advancing to Stage 3 — Specification and Wireframes
+- 2026-06-15 Stage 3 — Screen inventory done (12 screens from the 3 scenarios + standard states)
+- 2026-06-15 Stage 3 — Screen descriptions done (all 12 screens; structured opponent scouting boxes FH/Serve/BH/Other with type-or-dictate; playstyle from list; every text box type-or-dictate)
+- 2026-06-15 Stage 3 — Wireframes built (Astro project in wireframes/ + standalone clickable matchmind-wireframes.html; all 12 screens; refinements: scouting+reflection boxes on Log Match non-optional; Opponent Detail is the hub with past-matches list → Match Detail)
+- 2026-06-15 Stage 3 — Scenario walkthrough done (all 3 scenarios pass, each delivers the key benefit)
+- 2026-06-15 STAGE 3 COMPLETE → PROJECT DONE (all three UA Framework stages finished)
 
 ## Known gaps
 
@@ -63,4 +69,4 @@ Things the student and agent have flagged as not yet addressed. Carried forward 
 ## Last updated
 
 - **Date:** 2026-06-15
-- **By:** ua-orchestrator (Stage 2 complete; paused before Stage 3)
+- **By:** ua-orchestrator (Stage 3 → Done)

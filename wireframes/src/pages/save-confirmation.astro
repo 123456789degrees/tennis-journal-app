@@ -1,0 +1,15 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Save confirmation">
+  <p class="screen-label">Screen 12</p>
+  <wired-card elevation="2" style="display:block; padding:1.5rem; text-align:center;">
+    <h2>✓ Match saved</h2>
+    <p>Nice — it's in. You can add more detail anytime.</p>
+    <div style="display:flex; gap:0.8rem; justify-content:center;">
+      <a href="/home"><wired-button elevation="2">Done</wired-button></a>
+      <a href="/match-detail"><wired-button>View match</wired-button></a>
+    </div>
+  </wired-card>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Done → Home · View match → Match Detail.</p></div>
+</Wireframe>

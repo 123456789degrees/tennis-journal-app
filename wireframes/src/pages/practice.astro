@@ -1,0 +1,31 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Practice / Insights">
+  <p class="screen-label">Screen 8 — the bonus AI layer</p>
+  <p><em>Surfaces on its own from your recent matches. You don't go looking for it.</em></p>
+
+  <wired-card elevation="2" style="display:block; padding:1rem; margin-bottom:0.8rem; background:#fffdf5;">
+    <strong>🤖 Your backhand got attacked in 3 of your last 5 matches.</strong>
+    <p style="margin:0.4rem 0;">Suggested drill: cross-court backhand consistency (hit 20 in a row), then practice the inside-out forehand to run around it.</p>
+    <div style="display:flex; gap:0.8rem;">
+      <wired-button>Open drill</wired-button>
+      <wired-button>Not quite →</wired-button>
+    </div>
+  </wired-card>
+
+  <wired-card elevation="1" style="display:block; padding:1rem;">
+    <strong>"Not quite" — what was the real issue?</strong>
+    <div style="margin-top:0.4rem;">
+      <wired-radio name="issue">My backhand stroke</wired-radio><br/>
+      <wired-radio name="issue">My footwork / movement</wired-radio><br/>
+      <wired-radio name="issue">Shot selection</wired-radio>
+    </div>
+    <p style="font-size:0.85rem; opacity:0.7;">This corrects the tip and trains future ones.</p>
+  </wired-card>
+
+  <div class="scenario-note">
+    <p><strong>Where actions go:</strong> Open drill → drill how-to · "Not quite" → correction picker (trains future tips) · Dismiss → removes it.</p>
+    <p><strong>Scenario 3.1:</strong> nudge appears → player disagrees → corrects it → tip improves. ✔ (The failure branch — a wrong tip — has a recovery path.)</p>
+  </div>
+</Wireframe>

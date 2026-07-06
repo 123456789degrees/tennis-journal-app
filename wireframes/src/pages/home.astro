@@ -1,0 +1,33 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Home / Dashboard">
+  <p class="screen-label">Screen 2 — the launch point</p>
+
+  <a href="/log-match" style="text-decoration:none;">
+    <wired-button elevation="2" style="width:100%; padding:1.2rem; font-size:1.3rem; margin-bottom:1.5rem;">+ Log a match</wired-button>
+  </a>
+
+  <wired-card elevation="1" style="display:block; padding:1rem; margin-bottom:1.5rem; background:#fffdf5;">
+    <strong>⚡ Practice nudge</strong>
+    <p style="margin:0.4rem 0;">Your backhand got attacked in 3 of your last 5 matches.</p>
+    <a href="/practice"><wired-button>See drill →</wired-button></a>
+  </wired-card>
+
+  <h3>Recent matches</h3>
+  <wired-card elevation="1" style="display:block; padding:0.5rem 1rem;">
+    <p><a href="/match-detail">vs. Wylan — L 4-6, 3-6 · Jun 3</a></p>
+    <p><a href="/match-detail">vs. Daren — W 6-2, 6-4 · May 28</a></p>
+    <p><a href="/match-detail">vs. Alex P. — L 5-7, 6-7 · May 14</a></p>
+  </wired-card>
+
+  <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+    <a href="/select-opponent"><wired-button>Opponents / search</wired-button></a>
+    <a href="/match-history"><wired-button>All matches</wired-button></a>
+    <a href="/settings"><wired-button>Settings</wired-button></a>
+  </div>
+
+  <div class="scenario-note">
+    <p><strong>Where actions go:</strong> Log a match → Quick Capture · Practice nudge → Practice · Recent match → Match Detail · Opponents → Select/Add Opponent · Settings → Settings.</p>
+  </div>
+</Wireframe>

@@ -1,0 +1,67 @@
+---
+// Shared layout for every wireframe page.
+// Uses wired-elements (https://wiredjs.com) for the hand-drawn look.
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title} — Wireframe</title>
+    <script type="module" src="https://unpkg.com/wired-elements?module"></script>
+    <style>
+      :root {
+        --paper: #fdf8ec;
+        --ink: #222;
+      }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: 'Patrick Hand', 'Comic Sans MS', cursive, system-ui;
+        max-width: 960px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+      }
+      header {
+        border-bottom: 2px dashed var(--ink);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      header a {
+        color: var(--ink);
+        font-size: 0.9rem;
+      }
+      .screen-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        opacity: 0.6;
+      }
+      main {
+        line-height: 1.6;
+      }
+      .scenario-note {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px dashed var(--ink);
+        font-size: 0.85rem;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <div class="screen-label">Screen</div>
+        <h1>{title}</h1>
+      </div>
+      <a href="/">← inventory</a>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Error / offline state">
+  <p class="screen-label">Screen 11</p>
+  <wired-card elevation="2" style="display:block; padding:1.5rem; background:#fff6f6;">
+    <h3>Couldn't save — you're offline</h3>
+    <p>Don't worry — everything you entered is still here. We'll try again.</p>
+    <a href="/save-confirmation"><wired-button elevation="2">Retry</wired-button></a>
+    <a href="/log-match"><wired-button>Keep editing</wired-button></a>
+  </wired-card>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Retry → save again (→ confirmation on success; stays here if still failing) · Keep editing → back to Quick Capture with data preserved.</p></div>
+</Wireframe>

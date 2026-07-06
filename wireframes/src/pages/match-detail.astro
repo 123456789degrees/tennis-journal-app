@@ -1,0 +1,18 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Match Detail">
+  <p class="screen-label">Screen 7</p>
+  <wired-card elevation="2" style="display:block; padding:1rem;">
+    <h3 style="margin-top:0;">vs. <a href="/opponent-detail">Wylan</a></h3>
+    <p>Result: <strong>Loss</strong> — 4-6, 3-6 · Jun 3</p>
+    <p>Playstyle at the time: Aggressive baseliner</p>
+    <p><strong>Match notes</strong> (type or 🎤 dictate)</p>
+    <wired-textarea placeholder="Add notes now or later when calmer..." style="width:100%;"></wired-textarea>
+  </wired-card>
+  <div style="margin-top:1rem; display:flex; gap:0.8rem;">
+    <a href="/opponent-detail"><wired-button>View opponent</wired-button></a>
+    <a href="/match-history"><wired-button>Delete match</wired-button></a>
+  </div>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Edit → saved here · View opponent → Opponent Detail · Delete → confirm, then Match History.</p></div>
+</Wireframe>

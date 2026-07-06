@@ -1,0 +1,19 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Select / Add Opponent">
+  <p class="screen-label">Screen 4</p>
+  <wired-input placeholder="Search opponent (fuzzy — spelling/nicknames ok)..." style="width:100%;"></wired-input>
+
+  <h3>Your opponents</h3>
+  <wired-card elevation="1" style="display:block; padding:0.5rem 1rem;">
+    <p><a href="/opponent-detail">Wylan</a> — 1W 2L · Aggressive baseliner</p>
+    <p><a href="/opponent-detail">Daren</a> — 2W 1L · Counterpuncher</p>
+    <p><a href="/opponent-detail">Alex P.</a> — 0W 2L · Pusher</p>
+  </wired-card>
+
+  <div style="margin-top:1rem;">
+    <a href="/opponent-detail"><wired-button elevation="2">+ Add new opponent</wired-button></a>
+  </div>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Pick existing → returns to caller / Opponent Detail · Add new → creates opponent, returns · No match → offer "Add new."</p></div>
+</Wireframe>

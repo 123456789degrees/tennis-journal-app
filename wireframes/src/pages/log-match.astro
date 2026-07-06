@@ -1,0 +1,54 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Log Match (Quick Capture)">
+  <p class="screen-label">Screen 3 — capture the match AND a reflection, fast</p>
+  <p><em>Scouting + reflection boxes are right here, not hidden — that's how you actually improve. Every box is type OR 🎤 dictate, so a tired player can just talk.</em></p>
+
+  <wired-card elevation="2" style="display:block; padding:1rem; margin:1rem 0;">
+    <p><strong>Opponent</strong></p>
+    <a href="/select-opponent" style="text-decoration:none;"><wired-input placeholder="Search or add opponent..." style="width:100%;"></wired-input></a>
+
+    <p style="margin-top:1rem;"><strong>Score</strong></p>
+    <div style="display:flex; gap:0.5rem;">
+      <wired-input placeholder="Set 1"></wired-input>
+      <wired-input placeholder="Set 2"></wired-input>
+      <wired-input placeholder="Set 3"></wired-input>
+    </div>
+    <div style="margin-top:0.5rem;">
+      <wired-radio name="result">Win</wired-radio>
+      <wired-radio name="result">Loss</wired-radio>
+    </div>
+
+    <p style="margin-top:1rem;"><strong>Playstyle</strong> (pick from list)</p>
+    <wired-combo style="width:100%;">
+      <wired-item value="pusher">Pusher / moonballer</wired-item>
+      <wired-item value="aggressive">Aggressive baseliner</wired-item>
+      <wired-item value="serve-volley">Serve-and-volley</wired-item>
+      <wired-item value="all-court">All-court</wired-item>
+      <wired-item value="counterpuncher">Counterpuncher</wired-item>
+    </wired-combo>
+  </wired-card>
+
+  <wired-card elevation="2" style="display:block; padding:1rem; margin:1rem 0;">
+    <p><strong>Scout your opponent</strong> <span style="font-size:0.8rem; opacity:0.6;">(type or 🎤 dictate)</span></p>
+    <p style="margin:0.3rem 0;">Forehand <wired-input placeholder="e.g. strong but not consistent" style="width:100%;"></wired-input></p>
+    <p style="margin:0.3rem 0;">Serve <wired-input placeholder="e.g. big serve, lots of kick" style="width:100%;"></wired-input></p>
+    <p style="margin:0.3rem 0;">Backhand <wired-input placeholder="e.g. weak, just makes it back" style="width:100%;"></wired-input></p>
+    <p style="margin:0.3rem 0;">Other <wired-input placeholder="anything else" style="width:100%;"></wired-input></p>
+  </wired-card>
+
+  <wired-card elevation="2" style="display:block; padding:1rem; margin:1rem 0; background:#fffdf5;">
+    <p><strong>Your game this match</strong> <span style="font-size:0.8rem; opacity:0.6;">(type or 🎤 dictate)</span></p>
+    <p style="margin:0.3rem 0;">✅ What I did well <wired-input placeholder="e.g. forehand was on" style="width:100%;"></wired-input></p>
+    <p style="margin:0.3rem 0;">📈 What to improve <wired-input placeholder="e.g. backhand, second serve" style="width:100%;"></wired-input></p>
+    <p style="font-size:0.8rem; opacity:0.6; margin:0.2rem 0 0;">This feeds your automatic practice tips.</p>
+  </wired-card>
+
+  <a href="/save-confirmation"><wired-button elevation="2" style="padding:0.8rem 1.5rem;">Save</wired-button></a>
+
+  <div class="scenario-note">
+    <p><strong>Where actions go:</strong> Opponent field → Select/Add Opponent · Save → Save confirmation (scouting saved to the opponent; reflection feeds Practice) · save fails → Error/offline.</p>
+    <p><strong>Design note:</strong> boxes are present by default (not optional) so people actually improve; kept fast via type-or-dictate. Open question: does non-optional lower logging rate? (test)</p>
+  </div>
+</Wireframe>

@@ -1,0 +1,49 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Opponent Detail (Scouting)">
+  <p class="screen-label">Screen 5 — everything about one opponent</p>
+
+  <wired-card elevation="2" style="display:block; padding:1rem; margin-bottom:1rem;">
+    <h2 style="margin:0;">Wylan</h2>
+    <p style="margin:0.3rem 0;">Playstyle: <strong>Aggressive baseliner</strong> · Head-to-head: <strong>1 W – 2 L</strong></p>
+  </wired-card>
+
+  <h3>Scouting profile <span style="font-size:0.8rem; opacity:0.6;">(type or 🎤 dictate each box)</span></h3>
+
+  <wired-card elevation="1" style="display:block; padding:0.8rem; margin-bottom:0.6rem;">
+    <strong>Forehand</strong>
+    <wired-input placeholder="e.g. strong but not consistent" style="width:100%;"></wired-input>
+  </wired-card>
+  <wired-card elevation="1" style="display:block; padding:0.8rem; margin-bottom:0.6rem;">
+    <strong>Serve</strong>
+    <wired-input placeholder="e.g. big serve, fast with lots of kick" style="width:100%;"></wired-input>
+  </wired-card>
+  <wired-card elevation="1" style="display:block; padding:0.8rem; margin-bottom:0.6rem;">
+    <strong>Backhand</strong>
+    <wired-input placeholder="e.g. weak, just makes it back" style="width:100%;"></wired-input>
+  </wired-card>
+  <wired-card elevation="1" style="display:block; padding:0.8rem; margin-bottom:1rem;">
+    <strong>Other notes</strong>
+    <wired-textarea placeholder="Type or dictate anything else..." style="width:100%;"></wired-textarea>
+  </wired-card>
+
+  <wired-card elevation="2" style="display:block; padding:1rem; margin-bottom:1rem; background:#fffdf5;">
+    <strong>🤖 How to beat them (AI — bonus)</strong>
+    <p style="margin:0.4rem 0;">Attack the backhand early; stay patient in rallies and make him hit the extra ball. Return his kick serve from further back.</p>
+  </wired-card>
+
+  <h3>Your matches vs. Wylan</h3>
+  <wired-card elevation="1" style="display:block; padding:0.5rem 1rem; margin-bottom:1rem;">
+    <p><a href="/match-detail">L 4-6, 3-6 · Jun 3, 2026</a></p>
+    <p><a href="/match-detail">W 6-3, 7-5 · Apr 20, 2026</a></p>
+    <p><a href="/match-detail">L 2-6, 4-6 · Nov 8, 2025</a></p>
+  </wired-card>
+
+  <a href="/log-match"><wired-button elevation="2">Log a match vs. Wylan</wired-button></a>
+
+  <div class="scenario-note">
+    <p><strong>Where actions go:</strong> Edit a box → saved to this opponent (stays here) · Tap a past match → Match Detail · Log a match → Quick Capture (opponent pre-filled).</p>
+    <p><strong>Scenario 2.1:</strong> search a familiar name → land here → even a thin note jogs the memory + tip forms a plan. ✔</p>
+  </div>
+</Wireframe>

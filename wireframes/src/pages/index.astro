@@ -1,0 +1,31 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+
+const screens = [
+  { name: 'Login / Account setup', href: '/login', purpose: 'Sign in; parent involved for under-13.' },
+  { name: 'Home / Dashboard', href: '/home', purpose: 'Launch point: log a match, recent matches, practice nudge.' },
+  { name: 'Log Match (Quick Capture)', href: '/log-match', purpose: 'Record a match in seconds.' },
+  { name: 'Select / Add Opponent', href: '/select-opponent', purpose: 'Find or add an opponent (fuzzy search).' },
+  { name: 'Opponent Detail (Scouting)', href: '/opponent-detail', purpose: 'H2H, scouting boxes, how-to-beat tip.' },
+  { name: 'Match History', href: '/match-history', purpose: 'Browse all logged matches.' },
+  { name: 'Match Detail', href: '/match-detail', purpose: 'View / edit one match, add notes later.' },
+  { name: 'Practice / Insights', href: '/practice', purpose: 'Auto weaknesses + suggested drills.' },
+  { name: 'Settings', href: '/settings', purpose: 'Account, nudges, privacy.' },
+  { name: 'Empty state (first run)', href: '/empty-state', purpose: 'Welcoming first-run Home with no data.' },
+  { name: 'Error / offline', href: '/error-state', purpose: 'Save failed / offline, data preserved.' },
+  { name: 'Save confirmation', href: '/save-confirmation', purpose: 'Quick "match saved" confirmation.' },
+];
+---
+<Wireframe title="MatchMind — Screen Inventory">
+  <p>Wireframes for <strong>MatchMind</strong>. Hand-drawn on purpose — the point is feedback about whether it does the job, not about colors. Click into any screen and walk a scenario through it.</p>
+
+  <ul>
+    {screens.map((s) => (
+      <li style="margin-bottom:0.4rem;"><a href={s.href}><strong>{s.name}</strong></a> — {s.purpose}</li>
+    ))}
+  </ul>
+
+  <div class="scenario-note">
+    <p><strong>Walk a scenario:</strong> start on the screen the scenario begins on and click the links the way a real user would. If you hit a dead end, the wireframe or the screen description in <code>ua6-specification.md</code> is wrong.</p>
+  </div>
+</Wireframe>

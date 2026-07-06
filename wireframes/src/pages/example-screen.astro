@@ -1,0 +1,37 @@
+---
+// Example wireframe page. Copy this when adding a new screen.
+// Replace the screen name in the <Wireframe title=...> tag.
+// Replace the body with content / actions described in ua6-specification.md.
+//
+// Use wired-elements:
+//   <wired-button>label</wired-button>
+//   <wired-input placeholder="..."></wired-input>
+//   <wired-card>...content...</wired-card>
+//   <wired-checkbox>label</wired-checkbox>
+//
+// For navigation, wrap a <wired-button> in an <a href="/other-screen">.
+
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Example Screen">
+  <p><strong>Purpose:</strong> [from ua6-specification.md]</p>
+  <p><strong>Who lands here:</strong> [from ua6-specification.md]</p>
+
+  <wired-card elevation="2" style="padding: 1rem; margin: 1rem 0; display: block;">
+    <p>Content the user needs to see goes here.</p>
+    <p><em>(From "What's shown" in ua6-specification.md)</em></p>
+  </wired-card>
+
+  <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+    <a href="/"><wired-button>Action 1</wired-button></a>
+    <a href="/"><wired-button>Action 2</wired-button></a>
+  </div>
+
+  <div class="scenario-note">
+    <p><strong>Where each action goes:</strong></p>
+    <ul>
+      <li>Action 1 → [destination]</li>
+      <li>Action 2 → [destination]</li>
+    </ul>
+  </div>
+</Wireframe>

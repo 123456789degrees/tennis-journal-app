@@ -1,0 +1,13 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Empty state (first run)">
+  <p class="screen-label">Screen 10 — Home before any data</p>
+  <wired-card elevation="2" style="display:block; padding:1.5rem; text-align:center;">
+    <h3>Welcome to MatchMind 🎾</h3>
+    <p>You haven't logged any matches yet. Log your first one — it takes about 15 seconds.</p>
+    <a href="/log-match"><wired-button elevation="2" style="padding:0.8rem 1.5rem;">+ Log your first match</wired-button></a>
+  </wired-card>
+  <p style="opacity:0.6; margin-top:1rem;">Opponents and practice tips will appear here as you log matches.</p>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Log your first match → Quick Capture.</p></div>
+</Wireframe>

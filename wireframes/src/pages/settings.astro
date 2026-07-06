@@ -1,0 +1,17 @@
+---
+import Wireframe from '../layouts/Wireframe.astro';
+---
+<Wireframe title="Settings">
+  <p class="screen-label">Screen 9</p>
+  <wired-card elevation="1" style="display:block; padding:1rem;">
+    <p><strong>Account:</strong> joshua@email.com</p>
+    <p><strong>Parent on account:</strong> (for under-13)</p>
+    <hr/>
+    <wired-checkbox checked>Practice nudges</wired-checkbox><br/>
+    <wired-checkbox checked>Reminder to log after a match</wired-checkbox>
+    <hr/>
+    <p style="font-size:0.85rem; opacity:0.8;">🔒 Your data is private and personal — only you can see your matches and opponent notes. Nothing is shared or public.</p>
+  </wired-card>
+  <div style="margin-top:1rem;"><a href="/login"><wired-button>Sign out</wired-button></a></div>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Toggles → saved here · Sign out → Login.</p></div>
+</Wireframe>
