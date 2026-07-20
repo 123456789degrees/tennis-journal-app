@@ -1,0 +1,208 @@
+:root {
+  --primary: #2E7D32;
+  --primary-dark: #1B5E20;
+  --primary-text: #FFFFFF;
+  --accent: #C6E600;
+  --accent-text: #16241A;
+  --background: #F8FAF0;
+  --surface: #FFFFFF;
+  --surface-alt: #E4F1B8;
+  --border: #D8E3C4;
+  --text: #16241A;
+  --text-secondary: #5C6E56;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --max-width: 880px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.wrap {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Header */
+.site-header {
+  background: var(--primary);
+  color: var(--primary-text);
+}
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.site-header .brand {
+  color: var(--primary-text);
+  font-weight: 800;
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+.site-header nav {
+  display: flex;
+  gap: 8px;
+}
+.site-header nav a {
+  color: var(--primary-text);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+.site-header nav a:hover,
+.site-header nav a.active {
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 1;
+}
+
+/* Main content */
+main.page {
+  padding-top: 40px;
+  padding-bottom: 64px;
+  min-height: 60vh;
+}
+.page-title {
+  font-size: 2rem;
+  margin: 0 0 8px;
+}
+h2 { font-size: 1.4rem; margin-top: 2.2em; }
+h3 { font-size: 1.15rem; }
+a { color: var(--primary-dark); }
+code {
+  background: var(--surface-alt);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+/* Callout / card components used across pages */
+.callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 2px 10px rgba(22, 36, 26, 0.06);
+}
+.callout.accent {
+  background: var(--surface-alt);
+  border-color: var(--accent);
+}
+.callout h3 {
+  margin-top: 0;
+}
+
+.button {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--primary-text) !important;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  margin-top: 8px;
+}
+.button:hover { background: var(--primary-dark); }
+.button.accent {
+  background: var(--accent);
+  color: var(--accent-text) !important;
+}
+
+/* Positioning statement blockquote styling */
+blockquote {
+  border-left: 4px solid var(--accent);
+  margin: 1.5em 0;
+  padding: 0.5em 1.2em;
+  background: var(--surface-alt);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+blockquote p { margin: 0.4em 0; }
+
+/* Stage index list on process.html */
+.stage-list {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.stage-list li {
+  margin-bottom: 16px;
+}
+.stage-list a {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: 0 2px 10px rgba(22, 36, 26, 0.05);
+}
+.stage-list a:hover { border-color: var(--primary); }
+.stage-list .stage-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary-dark);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 4px;
+}
+.stage-list .stage-teaser {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  display: block;
+  margin-top: 4px;
+}
+
+/* Results / summary boxes on stage pages */
+.results-box {
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  background: var(--surface);
+  margin: 20px 0;
+}
+.results-box h3 {
+  margin-top: 0;
+  color: var(--primary-dark);
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #5FBF54;
+    --primary-dark: #4CA843;
+    --primary-text: #0B1608;
+    --accent: #D4E157;
+    --accent-text: #16241A;
+    --background: #101A0D;
+    --surface: #1C2A17;
+    --surface-alt: #2F4321;
+    --border: #33441F;
+    --text: #EFF5E6;
+    --text-secondary: #A9BC9E;
+  }
+  code { color: var(--text); }
+}

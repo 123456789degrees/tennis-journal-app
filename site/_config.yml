@@ -1,0 +1,23 @@
+title: MatchMind
+description: >-
+  A tennis match journal and opponent-scouting app for junior competitive
+  players — built with the UA Framework.
+baseurl: ""
+url: ""
+repository: 123456789degrees/tennis-journal-app
+
+# Pages that make up the top nav. Order here is the order shown.
+nav_pages:
+  - title: Home
+    path: /
+  - title: The Process
+    path: /process.html
+  - title: Wireframes
+    path: /wireframes.html
+
+markdown: kramdown
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
