@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "astro": "^4.0.0",
-    "wired-elements": "^3.0.0"
+    "wired-elements": "^2.1.2"
   }
 }
