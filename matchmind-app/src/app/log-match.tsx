@@ -12,7 +12,6 @@ import { Card } from '@/components/ui/card';
 import { Radius, Spacing } from '@/constants/theme';
 import type { MatchResult, Opponent, Playstyle } from '@/data/models';
 import { consumePendingOpponentSelection } from '@/data/selection-bridge';
-import { generateOpponentTip } from '@/data/ai-tips';
 import { getOpponent, saveMatch, upsertOpponent } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
@@ -46,10 +45,9 @@ export default function LogMatchScreen() {
     if (o) {
       setOpponent(o);
       setPlaystyle(o.playstyle);
-      setScoutForehand(o.scouting.forehand);
-      setScoutServe(o.scouting.serve);
-      setScoutBackhand(o.scouting.backhand);
-      setScoutOther(o.scouting.other);
+      // Scouting boxes intentionally start blank — they're this match's own
+      // observation, not a rehash of what was typed last time. The Opponent
+      // Detail page is where all of these get synthesized into one summary.
     }
   }
 
@@ -86,23 +84,23 @@ export default function LogMatchScreen() {
         score: sets.filter((s) => s.trim().length > 0),
         result,
         playstyleSnapshot: finalPlaystyle,
-        selfReflection: { whatWentWell: wentWell, whatToImprove: toImprove },
-        matchNotes: '',
-      });
-
-      const updatedOpponent = {
-        ...opponent,
-        playstyle: finalPlaystyle,
-        scouting: {
+        scoutingNotes: {
           forehand: scoutForehand,
           serve: scoutServe,
           backhand: scoutBackhand,
           other: scoutOther,
         },
+        selfReflection: { whatWentWell: wentWell, whatToImprove: toImprove },
+        matchNotes: '',
+      });
+
+      // Playstyle is the one field that genuinely reflects the opponent's
+      // *current* classification, so it's still updated directly here.
+      await upsertOpponent(playerId, {
+        ...opponent,
+        playstyle: finalPlaystyle,
         updatedAt: new Date().toISOString(),
-      };
-      updatedOpponent.aiTip = generateOpponentTip(updatedOpponent);
-      await upsertOpponent(playerId, updatedOpponent);
+      });
 
       setSavedMatchId(matchId);
       setTimeout(() => router.replace('/home'), 1600);
@@ -123,7 +121,9 @@ export default function LogMatchScreen() {
           <ThemedText type="title" style={{ color: theme.success }}>
             Match saved!
           </ThemedText>
-          <Pressable onPress={() => router.replace(`/match/${savedMatchId}`)}>
+          <Pressable
+            onPress={() => router.replace({ pathname: '/match/[id]', params: { id: savedMatchId } })}
+          >
             <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
               View match details →
             </ThemedText>
@@ -153,7 +153,7 @@ export default function LogMatchScreen() {
           <ThemedText type="smallBold">Opponent</ThemedText>
           <Pressable
             style={[styles.opponentPicker, { borderColor: theme.border, backgroundColor: theme.background }]}
-            onPress={() => router.push('/select-opponent')}
+            onPress={() => router.push('/select-opponent?mode=pick')}
           >
             <ThemedText>{opponent ? `🎾 ${opponent.name}` : 'Search or add opponent...'}</ThemedText>
           </Pressable>

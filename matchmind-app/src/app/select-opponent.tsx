@@ -1,5 +1,5 @@
 import Fuse from 'fuse.js';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +27,8 @@ export default function SelectOpponentScreen() {
   const router = useRouter();
   const theme = useTheme();
   const playerId = useCurrentPlayerId();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isPicking = mode === 'pick';
   const [query, setQuery] = useState('');
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -49,9 +51,13 @@ export default function SelectOpponentScreen() {
     ? fuse.search(query.trim()).map((r) => r.item)
     : opponents;
 
-  function selectAndReturn(opponent: Opponent) {
-    setPendingOpponentSelection(opponent.id);
-    router.back();
+  function selectOpponent(opponent: Opponent) {
+    if (isPicking) {
+      setPendingOpponentSelection(opponent.id);
+      router.back();
+    } else {
+      router.push(`/opponent/${opponent.id}`);
+    }
   }
 
   async function handleAddNew() {
@@ -60,7 +66,7 @@ export default function SelectOpponentScreen() {
       name: addingName.trim(),
       playstyle: addingPlaystyle,
     });
-    selectAndReturn(opponent);
+    selectOpponent(opponent);
   }
 
   const inputStyle = {
@@ -100,7 +106,7 @@ export default function SelectOpponentScreen() {
                 styles.row,
                 { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
               ]}
-              onPress={() => selectAndReturn(item)}
+              onPress={() => selectOpponent(item)}
             >
               <ThemedText type="smallBold">{item.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">

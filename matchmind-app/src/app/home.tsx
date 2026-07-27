@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Radius, Spacing } from '@/constants/theme';
+import { refreshPracticeInsights } from '@/data/insights';
 import type { Match, Opponent, PracticeInsight } from '@/data/models';
 import { listInsights, listMatches, listOpponents } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
@@ -26,8 +27,10 @@ export default function HomeScreen() {
       if (!playerId) return;
       listMatches(playerId).then((all) => setMatches(all.slice(0, 5)));
       listOpponents(playerId).then(setOpponents);
-      listInsights(playerId).then((all) => {
-        setNudge(all.find((i) => i.status === 'active') ?? null);
+      refreshPracticeInsights(playerId).then(() => {
+        listInsights(playerId).then((all) => {
+          setNudge(all.find((i) => i.status === 'active') ?? null);
+        });
       });
     }, [playerId])
   );
@@ -90,7 +93,7 @@ export default function HomeScreen() {
                 styles.matchRow,
                 { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
               ]}
-              onPress={() => router.push(`/match/${item.id}`)}
+              onPress={() => router.push({ pathname: '/match/[id]', params: { id: item.id } })}
             >
               <ThemedText>
                 vs. {opponentName(item.opponentId)} —{' '}

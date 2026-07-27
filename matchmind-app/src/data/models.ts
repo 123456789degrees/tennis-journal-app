@@ -26,18 +26,18 @@ export interface Opponent {
   ownerPlayerId: string;
   name: string;
   playstyle: Playstyle;
-  scouting: {
-    forehand: string;
-    serve: string;
-    backhand: string;
-    other: string;
-  };
-  aiTip: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export type MatchResult = "Win" | "Loss";
+
+export interface ScoutingNotes {
+  forehand: string;
+  serve: string;
+  backhand: string;
+  other: string;
+}
 
 export interface Match {
   id: string;
@@ -47,6 +47,10 @@ export interface Match {
   score: string[];
   result: MatchResult;
   playstyleSnapshot: Playstyle;
+  // Scouting observations recorded for THIS specific match — the opponent's
+  // scouting "profile" is a summary computed across all of these, not a
+  // single overwritten field. See data/scouting-summary.ts.
+  scoutingNotes: ScoutingNotes;
   selfReflection: {
     whatWentWell: string;
     whatToImprove: string;

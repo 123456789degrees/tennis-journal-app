@@ -123,8 +123,6 @@ export async function createOpponent(
     ownerPlayerId: playerId,
     name: input.name,
     playstyle: input.playstyle,
-    scouting: { forehand: "", serve: "", backhand: "", other: "" },
-    aiTip: "",
     createdAt: now,
     updatedAt: now,
   };
