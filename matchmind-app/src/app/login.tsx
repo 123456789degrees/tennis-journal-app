@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -11,13 +11,21 @@ import { Radius, Spacing } from '@/constants/theme';
 import { createPlayer, findPlayerByEmail, setCurrentPlayerId } from '@/data/storage';
 import { useTheme } from '@/hooks/use-theme';
 
+type Mode = 'signin' | 'signup';
+
 export default function LoginScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [parentEmail, setParentEmail] = useState('');
   const [error, setError] = useState('');
+
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError('');
+  }
 
   async function handleSignIn() {
     setError('');
@@ -27,7 +35,11 @@ export default function LoginScreen() {
     }
     const existing = await findPlayerByEmail(email);
     if (!existing) {
-      setError('No account found with that email. Create one instead.');
+      setError('No account found with that email. Sign up instead.');
+      return;
+    }
+    if (existing.password !== password) {
+      setError('Incorrect password.');
       return;
     }
     await setCurrentPlayerId(existing.id);
@@ -40,6 +52,10 @@ export default function LoginScreen() {
       setError('Enter an email and password.');
       return;
     }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
     const existing = await findPlayerByEmail(email);
     if (existing) {
       setError('An account with that email already exists. Sign in instead.');
@@ -47,6 +63,7 @@ export default function LoginScreen() {
     }
     await createPlayer({
       email,
+      password,
       isUnder13: parentEmail.trim().length > 0,
       parentEmail: parentEmail.trim() || undefined,
     });
@@ -94,31 +111,56 @@ export default function LoginScreen() {
             onChangeText={setPassword}
           />
 
-          <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-            Under 13? We&apos;ll ask for a parent&apos;s email.
-          </ThemedText>
-          <TextInput
-            style={[styles.input, inputStyle]}
-            placeholder="Parent email (if under 13)"
-            placeholderTextColor={theme.textSecondary}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={parentEmail}
-            onChangeText={setParentEmail}
-          />
+          {mode === 'signup' ? (
+            <>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
+                Under 13? We&apos;ll ask for a parent&apos;s email.
+              </ThemedText>
+              <TextInput
+                style={[styles.input, inputStyle]}
+                placeholder="Parent email (if under 13)"
+                placeholderTextColor={theme.textSecondary}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={parentEmail}
+                onChangeText={setParentEmail}
+              />
+            </>
+          ) : null}
 
           {error ? (
             <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText>
           ) : null}
 
-          <ThemedView style={styles.buttonRow}>
-            <ThemedView style={styles.buttonFlex}>
-              <Button label="Sign in" onPress={handleSignIn} fullWidth />
-            </ThemedView>
-            <ThemedView style={styles.buttonFlex}>
-              <Button label="Create account" variant="outline" onPress={handleCreateAccount} fullWidth />
-            </ThemedView>
-          </ThemedView>
+          {mode === 'signin' ? (
+            <>
+              <ThemedView style={styles.buttonSpacing}>
+                <Button label="Sign in" onPress={handleSignIn} fullWidth />
+              </ThemedView>
+              <Pressable style={styles.switchModeRow} onPress={() => switchMode('signup')}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Don&apos;t have an account?{' '}
+                  <ThemedText type="small" style={{ color: theme.primary, fontWeight: '700' }}>
+                    Sign up
+                  </ThemedText>
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <ThemedView style={styles.buttonSpacing}>
+                <Button label="Create account" onPress={handleCreateAccount} fullWidth />
+              </ThemedView>
+              <Pressable style={styles.switchModeRow} onPress={() => switchMode('signin')}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Already have an account?{' '}
+                  <ThemedText type="small" style={{ color: theme.primary, fontWeight: '700' }}>
+                    Sign in
+                  </ThemedText>
+                </ThemedText>
+              </Pressable>
+            </>
+          )}
         </Card>
       </ThemedView>
     </SafeAreaView>
@@ -151,10 +193,6 @@ const styles = StyleSheet.create({
   },
   fieldSpacing: { marginTop: Spacing.three },
   error: { marginTop: Spacing.three },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-    marginTop: Spacing.four,
-  },
-  buttonFlex: { flex: 1 },
+  buttonSpacing: { marginTop: Spacing.four },
+  switchModeRow: { marginTop: Spacing.three, alignItems: 'center' },
 });

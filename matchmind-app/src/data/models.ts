@@ -13,6 +13,7 @@ export type Playstyle = (typeof PLAYSTYLES)[number];
 export interface Player {
   id: string;
   email: string;
+  password: string;
   isUnder13: boolean;
   parentEmail?: string;
   settings: {

@@ -43,6 +43,7 @@ const S = {
     <p class="mut">Tap a screen to open it.</p>
     <div class="dash">
     <p class="link" data-go="login">1 · Login / Account setup</p>
+    <p class="link" data-go="signup">1b · Sign up</p>
     <p class="link" data-go="home">2 · Home / Dashboard</p>
     <p class="link" data-go="log">3 · Log Match (Quick Capture)</p>
     <p class="link" data-go="selectopp">4 · Select / Add Opponent</p>
@@ -59,8 +60,15 @@ const S = {
   login:`<div class="top"><div class="label">Screen 1 · Login</div><span class="link" data-go="inventory">☰ screens</span></div>
     <div class="card"><h3 style="margin-top:0">MatchMind</h3>
     <div class="fld">you@email.com</div><div class="fld">password ••••••</div>
+    <div class="btn primary" data-go="home">Sign in</div></div>
+    <p class="mut" style="text-align:center">Don't have an account? <span class="link" data-go="signup">Sign up</span></p>`,
+
+  signup:`<div class="top"><div class="label">Screen 1b · Sign up</div><span class="link" data-go="inventory">☰ screens</span></div>
+    <div class="card"><h3 style="margin-top:0">Create account</h3>
+    <div class="fld">you@email.com</div><div class="fld">password ••••••</div>
     <p class="mut">Under 13? We'll ask for a parent's email.</p><div class="fld">parent email (if under 13)</div>
-    <div class="btn primary" data-go="home">Sign in</div><div class="btn" data-go="home">Create account</div></div>`,
+    <div class="btn primary" data-go="home">Create account</div></div>
+    <p class="mut" style="text-align:center">Already have an account? <span class="link" data-go="login">Sign in</span></p>`,
 
   home:`<div class="top"><div class="label">Screen 2 · Home</div><span class="link" data-go="inventory">☰ screens</span></div>
     <div class="big" data-go="log">+ Log a match</div>

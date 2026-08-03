@@ -9,12 +9,12 @@ import Wireframe from '../layouts/Wireframe.astro';
     <wired-input placeholder="you@email.com" style="width:100%;"></wired-input>
     <p style="margin-top:0.8rem;"><strong>Password</strong></p>
     <wired-input type="password" placeholder="••••••" style="width:100%;"></wired-input>
-    <p style="margin-top:0.8rem; font-size:0.85rem;">Under 13? We'll ask for a parent's email.</p>
-    <wired-input placeholder="Parent email (if under 13)" style="width:100%;"></wired-input>
-    <div style="margin-top:1rem; display:flex; gap:0.8rem;">
+    <div style="margin-top:1rem;">
       <a href="/home"><wired-button elevation="2">Sign in</wired-button></a>
-      <a href="/home"><wired-button>Create account</wired-button></a>
     </div>
+    <p style="margin-top:0.8rem; font-size:0.85rem; opacity:0.6; text-align:center;">
+      Don't have an account? <a href="/signup" style="text-decoration:underline;">Sign up</a>
+    </p>
   </wired-card>
-  <div class="scenario-note"><p><strong>Where actions go:</strong> Sign in / Create account → Home. Failure → inline error here.</p></div>
+  <div class="scenario-note"><p><strong>Where actions go:</strong> Sign in → Home (failure → inline "incorrect password" error here). Sign up link → Screen 1b (Sign up).</p></div>
 </Wireframe>
