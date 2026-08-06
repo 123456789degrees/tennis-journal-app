@@ -31,6 +31,7 @@ export default function LogMatchScreen() {
   const [scoutForehand, setScoutForehand] = useState('');
   const [scoutServe, setScoutServe] = useState('');
   const [scoutBackhand, setScoutBackhand] = useState('');
+  const [scoutMental, setScoutMental] = useState('');
   const [scoutOther, setScoutOther] = useState('');
 
   const [wentWell, setWentWell] = useState('');
@@ -91,6 +92,7 @@ export default function LogMatchScreen() {
           forehand: scoutForehand,
           serve: scoutServe,
           backhand: scoutBackhand,
+          mental: scoutMental,
           other: scoutOther,
         },
         selfReflection: { whatWentWell: wentWell, whatToImprove: toImprove },
@@ -242,6 +244,14 @@ export default function LogMatchScreen() {
             value={scoutBackhand}
             onChangeText={setScoutBackhand}
             placeholder="e.g. weak, just makes it back"
+          />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
+            Mental
+          </ThemedText>
+          <TypeOrDictateField
+            value={scoutMental}
+            onChangeText={setScoutMental}
+            placeholder="e.g. gets tight on big points, good fighter"
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Other

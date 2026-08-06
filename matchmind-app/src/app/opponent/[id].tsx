@@ -63,7 +63,8 @@ export default function OpponentDetailScreen() {
   const wins = matches.filter((m) => m.result === 'Win').length;
   const losses = matches.filter((m) => m.result === 'Loss').length;
   const summary = summarizeScouting(matches);
-  const hasAnyScouting = summary.forehand || summary.serve || summary.backhand || summary.other;
+  const hasAnyScouting =
+    summary.forehand || summary.serve || summary.backhand || summary.mental || summary.other;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -106,6 +107,7 @@ export default function OpponentDetailScreen() {
             {summary.forehand ? <StatBox label="Forehand" value={summary.forehand} /> : null}
             {summary.serve ? <StatBox label="Serve" value={summary.serve} /> : null}
             {summary.backhand ? <StatBox label="Backhand" value={summary.backhand} /> : null}
+            {summary.mental ? <StatBox label="Mental" value={summary.mental} /> : null}
             {summary.other ? <StatBox label="Other" value={summary.other} /> : null}
           </ThemedView>
         )}

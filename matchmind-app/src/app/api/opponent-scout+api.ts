@@ -7,6 +7,7 @@ interface ScoutingMatch {
   forehand: string;
   serve: string;
   backhand: string;
+  mental: string;
   other: string;
 }
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   const notesWithText = matches.filter(
-    (m) => m.forehand || m.serve || m.backhand || m.other
+    (m) => m.forehand || m.serve || m.backhand || m.mental || m.other
   );
   if (notesWithText.length === 0) {
     return Response.json({ tip: null, error: 'no_data' });
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   const notesText = notesWithText
     .map(
       (m, i) =>
-        `Match ${i + 1} (${m.date}): forehand="${m.forehand || '—'}", serve="${m.serve || '—'}", backhand="${m.backhand || '—'}", other="${m.other || '—'}"`
+        `Match ${i + 1} (${m.date}): forehand="${m.forehand || '—'}", serve="${m.serve || '—'}", backhand="${m.backhand || '—'}", mental="${m.mental || '—'}", other="${m.other || '—'}"`
     )
     .join('\n');
 
@@ -44,7 +45,7 @@ Here are the player's own scouting notes from every past match against this oppo
 
 ${notesText}
 
-Write a short, concrete "how to beat them" tip (2-4 sentences). Weight recent matches more heavily than old ones — if the notes show the opponent has improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently"). Be specific and tactical, not generic. Synthesize the notes — don't just repeat them verbatim.`;
+Write a short, concrete "how to beat them" tip (2-4 sentences). Weight recent matches more heavily than old ones — if the notes show the opponent has improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently"). Factor in the mental/mentality notes too — e.g. if they tighten up under pressure, suggest extending rallies on big points. Be specific and tactical, not generic. Synthesize the notes — don't just repeat them verbatim.`;
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {

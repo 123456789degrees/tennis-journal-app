@@ -48,6 +48,7 @@ export interface ScoutingSummary {
   forehand: string;
   serve: string;
   backhand: string;
+  mental: string;
   other: string;
 }
 
@@ -57,6 +58,7 @@ export function summarizeScouting(matches: Match[]): ScoutingSummary {
     forehand: summarizeCategory('forehand', oldestFirst),
     serve: summarizeCategory('serve', oldestFirst),
     backhand: summarizeCategory('backhand', oldestFirst),
+    mental: summarizeCategory('mental', oldestFirst),
     other: summarizeCategory('other', oldestFirst),
   };
 }

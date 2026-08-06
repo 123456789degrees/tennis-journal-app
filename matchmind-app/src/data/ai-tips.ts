@@ -6,7 +6,7 @@ import type { ScoutingSummary } from './scouting-summary';
 // plausible even with no AI wired up. See src/app/api/opponent-scout+api.ts
 // for the real AI path.
 export function generateOpponentTipHeuristic(summary: ScoutingSummary): string {
-  const { forehand, serve, backhand, other } = summary;
+  const { forehand, serve, backhand, mental, other } = summary;
   const notes = [
     backhand && /weak|shaky|breaks? down|inconsistent/i.test(backhand)
       ? 'Attack the backhand early and often.'
@@ -22,6 +22,11 @@ export function generateOpponentTipHeuristic(summary: ScoutingSummary): string {
       ? "Avoid feeding their forehand — work the ball to the other side."
       : forehand
         ? `Forehand: ${forehand}`
+        : null,
+    mental && /tight|nervous|panic|choke/i.test(mental)
+      ? 'Extend rallies on big points — they tend to tighten up under pressure.'
+      : mental
+        ? `Mental: ${mental}`
         : null,
     other || null,
   ].filter(Boolean);
@@ -55,6 +60,7 @@ export async function fetchOpponentTip(
           forehand: m.scoutingNotes?.forehand ?? '',
           serve: m.scoutingNotes?.serve ?? '',
           backhand: m.scoutingNotes?.backhand ?? '',
+          mental: m.scoutingNotes?.mental ?? '',
           other: m.scoutingNotes?.other ?? '',
         })),
       }),

@@ -37,6 +37,7 @@ export interface ScoutingNotes {
   forehand: string;
   serve: string;
   backhand: string;
+  mental: string;
   other: string;
 }
 

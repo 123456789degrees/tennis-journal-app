@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -6,9 +6,16 @@ import { Card } from '@/components/ui/card';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type StatLabel = 'Forehand' | 'Serve' | 'Backhand' | 'Other' | 'What went well' | 'What to improve';
+type StatLabel =
+  | 'Forehand'
+  | 'Serve'
+  | 'Backhand'
+  | 'Mental'
+  | 'Other'
+  | 'What went well'
+  | 'What to improve';
 
-const ICONS: Record<StatLabel, keyof typeof Ionicons.glyphMap> = {
+const IONICONS: Partial<Record<StatLabel, keyof typeof Ionicons.glyphMap>> = {
   Forehand: 'hand-right-outline',
   Serve: 'flash-outline',
   Backhand: 'hand-left-outline',
@@ -26,7 +33,11 @@ export function StatBox({ label, value }: { label: StatLabel; value: string }) {
   return (
     <Card interactive style={styles.card}>
       <View style={styles.row}>
-        <Ionicons name={ICONS[label]} size={16} color={iconColor} />
+        {label === 'Mental' ? (
+          <MaterialCommunityIcons name="brain" size={16} color={iconColor} />
+        ) : (
+          <Ionicons name={IONICONS[label]!} size={16} color={iconColor} />
+        )}
         <ThemedText type="smallBold">{label}</ThemedText>
       </View>
       <ThemedText type="small">{value}</ThemedText>
