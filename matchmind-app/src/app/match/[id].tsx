@@ -169,6 +169,14 @@ export default function MatchDetailScreen() {
           />
         </Card>
 
+        <Button
+          label="Edit match"
+          icon="create-outline"
+          onPress={() => router.push({ pathname: '/log-match', params: { matchId: match.id } })}
+          size="large"
+          fullWidth
+        />
+
         <ThemedView style={styles.actionsRow}>
           <ThemedView style={styles.actionFlex}>
             <Button

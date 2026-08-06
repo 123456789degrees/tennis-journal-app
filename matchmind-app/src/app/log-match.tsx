@@ -11,9 +11,9 @@ import { TypeOrDictateField } from '@/components/type-or-dictate-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import type { MatchResult, Opponent, Playstyle } from '@/data/models';
+import type { Match, MatchResult, Opponent, Playstyle } from '@/data/models';
 import { consumePendingOpponentSelection } from '@/data/selection-bridge';
-import { getOpponent, saveMatch, upsertOpponent } from '@/data/storage';
+import { getMatch, getOpponent, saveMatch, upsertOpponent } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -21,12 +21,15 @@ export default function LogMatchScreen() {
   const router = useRouter();
   const theme = useTheme();
   const playerId = useCurrentPlayerId();
-  const params = useLocalSearchParams<{ opponentId?: string }>();
+  const params = useLocalSearchParams<{ opponentId?: string; matchId?: string }>();
+  const isEditing = !!params.matchId;
 
   const [opponent, setOpponent] = useState<Opponent | null>(null);
   const [playstyle, setPlaystyle] = useState<Playstyle | null>(null);
   const [sets, setSets] = useState(['', '', '']);
   const [result, setResult] = useState<MatchResult | null>(null);
+  // Preserved from the original record when editing, unchanged by this form.
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
 
   const [scoutForehand, setScoutForehand] = useState('');
   const [scoutServe, setScoutServe] = useState('');
@@ -53,12 +56,37 @@ export default function LogMatchScreen() {
     }
   }
 
+  async function loadMatchForEdit(matchId: string) {
+    if (!playerId) return;
+    const m = await getMatch(playerId, matchId);
+    if (!m) return;
+    setEditingMatch(m);
+    const o = await getOpponent(playerId, m.opponentId);
+    setOpponent(o);
+    setPlaystyle(m.playstyleSnapshot);
+    setSets([...m.score, '', '', ''].slice(0, 3));
+    setResult(m.result);
+    setScoutForehand(m.scoutingNotes?.forehand ?? '');
+    setScoutServe(m.scoutingNotes?.serve ?? '');
+    setScoutBackhand(m.scoutingNotes?.backhand ?? '');
+    setScoutMental(m.scoutingNotes?.mental ?? '');
+    setScoutOther(m.scoutingNotes?.other ?? '');
+    setWentWell(m.selfReflection?.whatWentWell ?? '');
+    setToImprove(m.selfReflection?.whatToImprove ?? '');
+  }
+
   useEffect(() => {
-    // Loading the pre-filled opponent for this route param, not a same-tick state mirror.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (params.opponentId) loadOpponent(params.opponentId);
+    if (params.matchId) {
+      // Populating the form from an existing record for editing, not a
+      // same-tick state mirror.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadMatchForEdit(params.matchId);
+    } else if (params.opponentId) {
+      // Loading the pre-filled opponent for this route param, not a same-tick state mirror.
+      loadOpponent(params.opponentId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.opponentId, playerId]);
+  }, [params.matchId, params.opponentId, playerId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,13 +106,16 @@ export default function LogMatchScreen() {
     setSaveError('');
     try {
       const finalPlaystyle = playstyle ?? opponent.playstyle;
-      const matchId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const matchId = editingMatch?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
       await saveMatch(playerId, {
         id: matchId,
         ownerPlayerId: playerId,
         opponentId: opponent.id,
-        date: new Date().toISOString(),
+        // Editing keeps the original date (when it was actually played) and
+        // the separate "Match notes" free-text field, which lives on Match
+        // Detail, not this form.
+        date: editingMatch?.date ?? new Date().toISOString(),
         score: sets.filter((s) => s.trim().length > 0),
         result,
         playstyleSnapshot: finalPlaystyle,
@@ -96,7 +127,7 @@ export default function LogMatchScreen() {
           other: scoutOther,
         },
         selfReflection: { whatWentWell: wentWell, whatToImprove: toImprove },
-        matchNotes: '',
+        matchNotes: editingMatch?.matchNotes ?? '',
       });
 
       // Playstyle is the one field that genuinely reflects the opponent's
@@ -107,8 +138,12 @@ export default function LogMatchScreen() {
         updatedAt: new Date().toISOString(),
       });
 
-      setSavedMatchId(matchId);
-      setTimeout(() => router.replace('/home'), 1600);
+      if (isEditing) {
+        router.replace({ pathname: '/match/[id]', params: { id: matchId } });
+      } else {
+        setSavedMatchId(matchId);
+        setTimeout(() => router.replace('/home'), 1600);
+      }
     } catch {
       setSaveError("Couldn't save — you're offline. Nothing you entered was lost.");
     } finally {
@@ -150,17 +185,20 @@ export default function LogMatchScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
         <ThemedText type="title" style={styles.title}>
-          Log Match
+          {isEditing ? 'Edit Match' : 'Log Match'}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Scouting + reflection are right here, not hidden — every box is type or dictate.
+          {isEditing
+            ? "Update anything below — scouting and reflection feed back into the opponent's profile and Practice/Insights the same as when you first logged it."
+            : 'Scouting + reflection are right here, not hidden — every box is type or dictate.'}
         </ThemedText>
 
         <Card>
           <ThemedText type="smallBold">Opponent</ThemedText>
           <Pressable
             style={[styles.opponentPicker, { borderColor: theme.border, backgroundColor: theme.background }]}
-            onPress={() => router.push('/select-opponent?mode=pick')}
+            onPress={() => !isEditing && router.push('/select-opponent?mode=pick')}
+            disabled={isEditing}
           >
             {opponent ? (
               <ThemedView style={styles.opponentRow}>
@@ -174,6 +212,11 @@ export default function LogMatchScreen() {
               </ThemedView>
             )}
           </Pressable>
+          {isEditing ? (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
+              Opponent can&apos;t be changed on an existing match.
+            </ThemedText>
+          ) : null}
 
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Score
@@ -300,7 +343,7 @@ export default function LogMatchScreen() {
         ) : null}
 
         <Button
-          label={saving ? 'Saving...' : 'Save match'}
+          label={saving ? 'Saving...' : isEditing ? 'Save changes' : 'Save match'}
           icon={saving ? undefined : 'checkmark-circle-outline'}
           onPress={handleSave}
           disabled={!canSave || saving}
