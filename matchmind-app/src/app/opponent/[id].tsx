@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ShotStat } from '@/components/ui/shot-stat';
+import { StatBox } from '@/components/ui/stat-box';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { fetchOpponentTip } from '@/data/ai-tips';
 import type { Match, Opponent } from '@/data/models';
@@ -103,10 +103,10 @@ export default function OpponentDetailScreen() {
           </Card>
         ) : (
           <ThemedView style={styles.shotGrid}>
-            {summary.forehand ? <ShotStat type="Forehand" value={summary.forehand} /> : null}
-            {summary.serve ? <ShotStat type="Serve" value={summary.serve} /> : null}
-            {summary.backhand ? <ShotStat type="Backhand" value={summary.backhand} /> : null}
-            {summary.other ? <ShotStat type="Other" value={summary.other} /> : null}
+            {summary.forehand ? <StatBox label="Forehand" value={summary.forehand} /> : null}
+            {summary.serve ? <StatBox label="Serve" value={summary.serve} /> : null}
+            {summary.backhand ? <StatBox label="Backhand" value={summary.backhand} /> : null}
+            {summary.other ? <StatBox label="Other" value={summary.other} /> : null}
           </ThemedView>
         )}
 

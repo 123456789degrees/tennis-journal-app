@@ -46,13 +46,19 @@ export function Card({ style, tint = 'default', interactive = false, children, .
       : {};
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    // The caller's `style` (e.g. flexBasis/flexGrow for a grid layout) has to
+    // land on THIS outer view — it's the actual flex child within whatever
+    // row/wrap container the caller placed it in. Putting it on the inner
+    // Pressable instead (as an earlier version of this did) left the outer
+    // wrapper unsized, so cards in the same row didn't line up — some wide,
+    // some narrow, some tall, some short, no relation to their siblings.
+    <Animated.View style={[style, { transform: [{ scale }] }]}>
       <Pressable
         style={[
           styles.base,
+          styles.fill,
           { backgroundColor, borderColor: hovered ? theme.primary : theme.border },
           Platform.OS === 'web' && (hovered ? styles.hoverShadowWeb : styles.restShadowWeb),
-          style,
         ]}
         {...hoverProps}
         {...rest}
@@ -64,6 +70,7 @@ export function Card({ style, tint = 'default', interactive = false, children, .
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   base: {
     borderRadius: Radius.large,
     borderWidth: 1,

@@ -24,7 +24,6 @@ export default function PracticeScreen() {
   const theme = useTheme();
   const playerId = useCurrentPlayerId();
   const [insights, setInsights] = useState<PracticeInsight[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [correctingId, setCorrectingId] = useState<string | null>(null);
 
   async function load() {
@@ -91,25 +90,7 @@ export default function PracticeScreen() {
                 </ThemedText>
               </ThemedView>
 
-              {expandedId === insight.id ? (
-                <ThemedView style={styles.drillDetail}>
-                  <ThemedText type="small">
-                    Do this drill for 10–15 minutes before live points, 2–3 times this week. Track
-                    whether it comes up less often in your next few matches.
-                  </ThemedText>
-                </ThemedView>
-              ) : null}
-
               <ThemedView style={styles.actionsRow}>
-                <Pressable
-                  style={styles.actionLink}
-                  onPress={() => setExpandedId(expandedId === insight.id ? null : insight.id)}
-                >
-                  <Ionicons name="book-outline" size={14} color={theme.primary} />
-                  <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
-                    {expandedId === insight.id ? 'Hide drill' : 'Open drill'}
-                  </ThemedText>
-                </Pressable>
                 <Pressable
                   style={styles.actionLink}
                   onPress={() => setCorrectingId(correctingId === insight.id ? null : insight.id)}
@@ -166,7 +147,6 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   patternText: { flex: 1 },
-  drillDetail: { marginTop: Spacing.one },
   actionsRow: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two, flexWrap: 'wrap' },
   actionLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   correctionBox: { marginTop: Spacing.two, gap: Spacing.one },

@@ -8,7 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { TypeOrDictateField } from '@/components/type-or-dictate-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ShotStat } from '@/components/ui/shot-stat';
+import { StatBox } from '@/components/ui/stat-box';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import type { Match, Opponent } from '@/data/models';
 import { deleteMatch, getMatch, getOpponent, saveMatch } from '@/data/storage';
@@ -88,27 +88,36 @@ export default function MatchDetailScreen() {
         {match.scoutingNotes?.forehand ||
         match.scoutingNotes?.serve ||
         match.scoutingNotes?.backhand ||
-        match.scoutingNotes?.other ? (
+        match.scoutingNotes?.other ||
+        match.selfReflection?.whatWentWell ||
+        match.selfReflection?.whatToImprove ? (
           <ThemedView>
             <ThemedText type="smallBold" style={styles.scoutingHeading}>
-              Scouting from this match
+              Notes from this match
             </ThemedText>
             <ThemedView style={styles.shotGrid}>
-              {match.scoutingNotes.forehand ? (
-                <ShotStat type="Forehand" value={match.scoutingNotes.forehand} />
+              {match.scoutingNotes?.forehand ? (
+                <StatBox label="Forehand" value={match.scoutingNotes.forehand} />
               ) : null}
-              {match.scoutingNotes.serve ? (
-                <ShotStat type="Serve" value={match.scoutingNotes.serve} />
+              {match.scoutingNotes?.serve ? (
+                <StatBox label="Serve" value={match.scoutingNotes.serve} />
               ) : null}
-              {match.scoutingNotes.backhand ? (
-                <ShotStat type="Backhand" value={match.scoutingNotes.backhand} />
+              {match.scoutingNotes?.backhand ? (
+                <StatBox label="Backhand" value={match.scoutingNotes.backhand} />
               ) : null}
-              {match.scoutingNotes.other ? (
-                <ShotStat type="Other" value={match.scoutingNotes.other} />
+              {match.scoutingNotes?.other ? (
+                <StatBox label="Other" value={match.scoutingNotes.other} />
+              ) : null}
+              {match.selfReflection?.whatWentWell ? (
+                <StatBox label="What went well" value={match.selfReflection.whatWentWell} />
+              ) : null}
+              {match.selfReflection?.whatToImprove ? (
+                <StatBox label="What to improve" value={match.selfReflection.whatToImprove} />
               ) : null}
             </ThemedView>
             <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-              This feeds the AI summary on {opponent?.name ?? 'the opponent'}&apos;s scouting profile.
+              Scouting feeds the AI summary on {opponent?.name ?? 'the opponent'}&apos;s profile;
+              your reflection feeds Practice/Insights.
             </ThemedText>
           </ThemedView>
         ) : null}
