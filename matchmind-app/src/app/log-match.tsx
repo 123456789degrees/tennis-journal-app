@@ -251,7 +251,7 @@ export default function LogMatchScreen() {
           <TypeOrDictateField
             value={scoutMental}
             onChangeText={setScoutMental}
-            placeholder="e.g. gets tight on big points, good fighter"
+            placeholder="e.g. easily gets angry, tightens up on big points"
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Other

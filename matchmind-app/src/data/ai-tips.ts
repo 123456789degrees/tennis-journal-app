@@ -23,11 +23,13 @@ export function generateOpponentTipHeuristic(summary: ScoutingSummary): string {
       : forehand
         ? `Forehand: ${forehand}`
         : null,
-    mental && /tight|nervous|panic|choke/i.test(mental)
-      ? 'Extend rallies on big points — they tend to tighten up under pressure.'
-      : mental
-        ? `Mental: ${mental}`
-        : null,
+    mental && /angry|anger|temper|frustrat|meltdown|rage/i.test(mental)
+      ? 'Make them play extra shots and create adversity — they can lose composure and hand you free points once frustrated.'
+      : mental && /tight|nervous|panic|choke/i.test(mental)
+        ? 'Extend rallies on big points — they tend to tighten up under pressure.'
+        : mental
+          ? `Mental: ${mental}`
+          : null,
     other || null,
   ].filter(Boolean);
 

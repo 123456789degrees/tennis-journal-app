@@ -45,7 +45,7 @@ Here are the player's own scouting notes from every past match against this oppo
 
 ${notesText}
 
-Write a short, concrete "how to beat them" tip (2-4 sentences). Weight recent matches more heavily than old ones — if the notes show the opponent has improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently"). Factor in the mental/mentality notes too — e.g. if they tighten up under pressure, suggest extending rallies on big points. Be specific and tactical, not generic. Synthesize the notes — don't just repeat them verbatim.`;
+Write a short, concrete "how to beat them" tip (2-4 sentences). Weight recent matches more heavily than old ones — if the notes show the opponent has improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently"). Factor in the mental/mentality notes too, whatever form they take — tightening up under pressure, getting frustrated or angry, giving up mentally when down, being a scrappy fighter, etc. — and turn that into a concrete tactic (e.g. if they get angry easily, suggest making them play extra shots to create adversity; if they tighten up under pressure, suggest extending rallies on big points). Be specific and tactical, not generic. Synthesize the notes — don't just repeat them verbatim.`;
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
