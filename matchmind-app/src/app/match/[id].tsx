@@ -76,6 +76,8 @@ export default function MatchDetailScreen() {
     );
   }
 
+  const placeholder = 'Not logged yet.';
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -118,33 +120,34 @@ export default function MatchDetailScreen() {
               </ThemedText>
             </ThemedView>
             <ThemedView style={styles.shotGrid}>
-              {match.scoutingNotes?.forehand ? (
-                <StatBox label="Forehand" value={notesSummary.forehand ?? match.scoutingNotes.forehand} />
-              ) : null}
-              {match.scoutingNotes?.serve ? (
-                <StatBox label="Serve" value={notesSummary.serve ?? match.scoutingNotes.serve} />
-              ) : null}
-              {match.scoutingNotes?.backhand ? (
-                <StatBox label="Backhand" value={notesSummary.backhand ?? match.scoutingNotes.backhand} />
-              ) : null}
-              {match.scoutingNotes?.mental ? (
-                <StatBox label="Mental" value={notesSummary.mental ?? match.scoutingNotes.mental} />
-              ) : null}
-              {match.scoutingNotes?.other ? (
-                <StatBox label="Other" value={notesSummary.other ?? match.scoutingNotes.other} />
-              ) : null}
-              {match.selfReflection?.whatWentWell ? (
-                <StatBox
-                  label="What went well"
-                  value={notesSummary.whatWentWell ?? match.selfReflection.whatWentWell}
-                />
-              ) : null}
-              {match.selfReflection?.whatToImprove ? (
-                <StatBox
-                  label="What to improve"
-                  value={notesSummary.whatToImprove ?? match.selfReflection.whatToImprove}
-                />
-              ) : null}
+              <StatBox
+                label="Forehand"
+                value={(notesSummary.forehand ?? match.scoutingNotes?.forehand ?? '') || placeholder}
+              />
+              <StatBox
+                label="Serve"
+                value={(notesSummary.serve ?? match.scoutingNotes?.serve ?? '') || placeholder}
+              />
+              <StatBox
+                label="Backhand"
+                value={(notesSummary.backhand ?? match.scoutingNotes?.backhand ?? '') || placeholder}
+              />
+              <StatBox
+                label="Mental"
+                value={(notesSummary.mental ?? match.scoutingNotes?.mental ?? '') || placeholder}
+              />
+              <StatBox
+                label="Other"
+                value={(notesSummary.other ?? match.scoutingNotes?.other ?? '') || placeholder}
+              />
+              <StatBox
+                label="What went well"
+                value={(notesSummary.whatWentWell ?? match.selfReflection?.whatWentWell ?? '') || placeholder}
+              />
+              <StatBox
+                label="What to improve"
+                value={(notesSummary.whatToImprove ?? match.selfReflection?.whatToImprove ?? '') || placeholder}
+              />
             </ThemedView>
             <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
               Scouting feeds the AI summary on {opponent?.name ?? 'the opponent'}&apos;s profile;

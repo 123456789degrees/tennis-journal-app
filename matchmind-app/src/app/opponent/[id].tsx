@@ -63,8 +63,7 @@ export default function OpponentDetailScreen() {
   const wins = matches.filter((m) => m.result === 'Win').length;
   const losses = matches.filter((m) => m.result === 'Loss').length;
   const summary = summarizeScouting(matches);
-  const hasAnyScouting =
-    summary.forehand || summary.serve || summary.backhand || summary.mental || summary.other;
+  const placeholder = 'Not logged yet.';
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -95,20 +94,22 @@ export default function OpponentDetailScreen() {
           </ThemedText>
         </ThemedView>
 
-        {!hasAnyScouting ? (
+        {matches.length === 0 ? (
           <Card>
             <ThemedText type="small" themeColor="textSecondary">
-              No scouting notes yet — fill in the scouting boxes next time you log a match against{' '}
-              {opponent.name} and a summary will build up here.
+              No matches logged yet — log a match against {opponent.name} and a scouting summary
+              will build up here.
             </ThemedText>
           </Card>
         ) : (
           <ThemedView style={styles.shotGrid}>
-            {summary.forehand ? <StatBox label="Forehand" value={summary.forehand} /> : null}
-            {summary.serve ? <StatBox label="Serve" value={summary.serve} /> : null}
-            {summary.backhand ? <StatBox label="Backhand" value={summary.backhand} /> : null}
-            {summary.mental ? <StatBox label="Mental" value={summary.mental} /> : null}
-            {summary.other ? <StatBox label="Other" value={summary.other} /> : null}
+            <StatBox label="Forehand" value={summary.forehand || placeholder} />
+            <StatBox label="Serve" value={summary.serve || placeholder} />
+            <StatBox label="Backhand" value={summary.backhand || placeholder} />
+            <StatBox label="Mental" value={summary.mental || placeholder} />
+            <StatBox label="Other" value={summary.other || placeholder} />
+            <StatBox label="What went well" value={summary.whatWentWell || placeholder} />
+            <StatBox label="What to improve" value={summary.whatToImprove || placeholder} />
           </ThemedView>
         )}
 
