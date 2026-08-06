@@ -1,3 +1,4 @@
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
@@ -9,7 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import { TypeOrDictateField } from '@/components/type-or-dictate-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { MatchResult, Opponent, Playstyle } from '@/data/models';
 import { consumePendingOpponentSelection } from '@/data/selection-bridge';
 import { getOpponent, saveMatch, upsertOpponent } from '@/data/storage';
@@ -52,6 +53,8 @@ export default function LogMatchScreen() {
   }
 
   useEffect(() => {
+    // Loading the pre-filled opponent for this route param, not a same-tick state mirror.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (params.opponentId) loadOpponent(params.opponentId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.opponentId, playerId]);
@@ -117,16 +120,18 @@ export default function LogMatchScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <ThemedView style={styles.confirmContainer}>
-          <ThemedText style={styles.confirmBall}>🎾</ThemedText>
+          <Ionicons name="checkmark-circle" size={72} color={theme.success} />
           <ThemedText type="title" style={{ color: theme.success }}>
             Match saved!
           </ThemedText>
           <Pressable
+            style={styles.linkRow}
             onPress={() => router.replace({ pathname: '/match/[id]', params: { id: savedMatchId } })}
           >
             <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
-              View match details →
+              View match details
             </ThemedText>
+            <Ionicons name="chevron-forward" size={16} color={theme.primary} />
           </Pressable>
         </ThemedView>
       </SafeAreaView>
@@ -146,7 +151,7 @@ export default function LogMatchScreen() {
           Log Match
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Scouting + reflection are right here, not hidden — every box is type or 🎤 dictate.
+          Scouting + reflection are right here, not hidden — every box is type or dictate.
         </ThemedText>
 
         <Card>
@@ -155,7 +160,17 @@ export default function LogMatchScreen() {
             style={[styles.opponentPicker, { borderColor: theme.border, backgroundColor: theme.background }]}
             onPress={() => router.push('/select-opponent?mode=pick')}
           >
-            <ThemedText>{opponent ? `🎾 ${opponent.name}` : 'Search or add opponent...'}</ThemedText>
+            {opponent ? (
+              <ThemedView style={styles.opponentRow}>
+                <MaterialCommunityIcons name="tennis-ball" size={16} color={theme.primary} />
+                <ThemedText>{opponent.name}</ThemedText>
+              </ThemedView>
+            ) : (
+              <ThemedView style={styles.opponentRow}>
+                <Ionicons name="search-outline" size={16} color={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary">Search or add opponent...</ThemedText>
+              </ThemedView>
+            )}
           </Pressable>
 
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
@@ -202,7 +217,10 @@ export default function LogMatchScreen() {
         </Card>
 
         <Card>
-          <ThemedText type="smallBold">🔍 Scout your opponent</ThemedText>
+          <ThemedView style={styles.cardHeaderRow}>
+            <Ionicons name="eye-outline" size={16} color={theme.text} />
+            <ThemedText type="smallBold">Scout your opponent</ThemedText>
+          </ThemedView>
           <ThemedText type="small" themeColor="textSecondary">Forehand</ThemedText>
           <TypeOrDictateField
             value={scoutForehand}
@@ -237,15 +255,19 @@ export default function LogMatchScreen() {
 
         <Card tint="accent">
           <ThemedText type="smallBold">Your game this match</ThemedText>
-          <ThemedText type="small">✅ What I did well</ThemedText>
+          <ThemedView style={styles.cardHeaderRow}>
+            <Ionicons name="checkmark-circle-outline" size={16} color={theme.success} />
+            <ThemedText type="small">What I did well</ThemedText>
+          </ThemedView>
           <TypeOrDictateField
             value={wentWell}
             onChangeText={setWentWell}
             placeholder="e.g. forehand was on"
           />
-          <ThemedText type="small" style={styles.fieldSpacing}>
-            📈 What to improve
-          </ThemedText>
+          <ThemedView style={[styles.cardHeaderRow, styles.fieldSpacing]}>
+            <Ionicons name="trending-up-outline" size={16} color={theme.text} />
+            <ThemedText type="small">What to improve</ThemedText>
+          </ThemedView>
           <TypeOrDictateField
             value={toImprove}
             onChangeText={setToImprove}
@@ -268,7 +290,8 @@ export default function LogMatchScreen() {
         ) : null}
 
         <Button
-          label={saving ? 'Saving...' : '🎾 Save match'}
+          label={saving ? 'Saving...' : 'Save match'}
+          icon={saving ? undefined : 'checkmark-circle-outline'}
           onPress={handleSave}
           disabled={!canSave || saving}
           size="large"
@@ -286,7 +309,14 @@ export default function LogMatchScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: { padding: Spacing.four, gap: Spacing.three, paddingBottom: Spacing.six },
+  container: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    padding: Spacing.four,
+    gap: Spacing.three,
+    paddingBottom: Spacing.six,
+  },
   title: {},
   opponentPicker: {
     borderWidth: 1,
@@ -294,6 +324,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
+  opponentRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   fieldSpacing: { marginTop: Spacing.two },
   setsRow: { flexDirection: 'row', gap: Spacing.one },
   setInput: {
@@ -322,5 +355,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.two,
   },
-  confirmBall: { fontSize: 56 },
 });

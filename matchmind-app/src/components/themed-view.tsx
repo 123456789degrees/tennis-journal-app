@@ -12,5 +12,12 @@ export type ThemedViewProps = ViewProps & {
 export function ThemedView({ style, lightColor, darkColor, type, ...otherProps }: ThemedViewProps) {
   const theme = useTheme();
 
-  return <View style={[{ backgroundColor: theme[type ?? 'background'] }, style]} {...otherProps} />;
+  // Transparent unless a type is explicitly requested — most ThemedViews in
+  // this app are just flex row/wrap layout helpers (icon + label rows, button
+  // groups, etc.), often nested inside a Card that already has its own
+  // background. Defaulting to theme.background here used to paint an opaque
+  // rectangle behind those rows, visible as a stray colored box.
+  return (
+    <View style={[type ? { backgroundColor: theme[type] } : undefined, style]} {...otherProps} />
+  );
 }

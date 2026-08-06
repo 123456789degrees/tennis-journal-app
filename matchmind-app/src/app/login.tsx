@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Logo } from '@/components/ui/logo';
 import { Radius, Spacing } from '@/constants/theme';
 import { createPlayer, findPlayerByEmail, setCurrentPlayerId } from '@/data/storage';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,6 +22,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [parentEmail, setParentEmail] = useState('');
   const [error, setError] = useState('');
+
+  const passwordRef = useRef<TextInput>(null);
+  const parentEmailRef = useRef<TextInput>(null);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -78,8 +82,15 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.primary }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        style={{ backgroundColor: theme.primary }}
+      >
       <ThemedView style={[styles.container, { backgroundColor: theme.primary }]}>
-        <ThemedText style={styles.ball}>🎾</ThemedText>
+        <ThemedView style={styles.logoWrap}>
+          <Logo size={64} background="rgba(255,255,255,0.16)" color={theme.primaryText} />
+        </ThemedView>
         <ThemedText type="title" style={[styles.title, { color: theme.primaryText }]}>
           MatchMind
         </ThemedText>
@@ -97,18 +108,25 @@ export default function LoginScreen() {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Password
           </ThemedText>
           <TextInput
+            ref={passwordRef}
             style={[styles.input, inputStyle]}
             placeholder="••••••"
             placeholderTextColor={theme.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
+            returnKeyType={mode === 'signup' ? 'next' : 'go'}
+            onSubmitEditing={() =>
+              mode === 'signup' ? parentEmailRef.current?.focus() : handleSignIn()
+            }
           />
 
           {mode === 'signup' ? (
@@ -117,6 +135,7 @@ export default function LoginScreen() {
                 Under 13? We&apos;ll ask for a parent&apos;s email.
               </ThemedText>
               <TextInput
+                ref={parentEmailRef}
                 style={[styles.input, inputStyle]}
                 placeholder="Parent email (if under 13)"
                 placeholderTextColor={theme.textSecondary}
@@ -124,6 +143,8 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 value={parentEmail}
                 onChangeText={setParentEmail}
+                returnKeyType="go"
+                onSubmitEditing={handleCreateAccount}
               />
             </>
           ) : null}
@@ -163,18 +184,22 @@ export default function LoginScreen() {
           )}
         </Card>
       </ThemedView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center' },
   container: {
-    flex: 1,
-    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
     paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.four,
   },
-  ball: { fontSize: 48, textAlign: 'center', marginBottom: Spacing.one },
+  logoWrap: { alignItems: 'center', marginBottom: Spacing.two },
   title: {
     textAlign: 'center',
     marginBottom: Spacing.one,

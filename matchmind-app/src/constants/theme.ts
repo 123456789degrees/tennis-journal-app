@@ -42,6 +42,21 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+// Gradients live separately from Colors so they never leak into ThemeColor
+// (which ThemedText/ThemedView use to type plain string color props).
+export const Gradients = {
+  light: {
+    primary: ['#3E9142', '#1F5C22'] as const,
+    accent: ['#D8F23A', '#B0D400'] as const,
+    danger: ['#D6564A', '#A5301F'] as const,
+  },
+  dark: {
+    primary: ['#71D467', '#3F9438'] as const,
+    accent: ['#E3EC6E', '#C4D62E'] as const,
+    danger: ['#EE8A7F', '#C6493B'] as const,
+  },
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     sans: 'system-ui',

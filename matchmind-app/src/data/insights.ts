@@ -1,11 +1,18 @@
-import type { PracticeInsight } from './models';
-import { listInsights, listMatches, saveInsight } from './storage';
+import type { Match, PracticeInsight } from './models';
+import {
+  getLastAnalyzedMatchId,
+  listInsights,
+  listMatches,
+  saveInsight,
+  setLastAnalyzedMatchId,
+} from './storage';
 
-// Placeholder heuristic — TRANSFER-PACKAGE.md flags the self-reflection →
-// Practice/Insights pipeline as an open implementation question (likely an
-// LLM call over recent match text in a real build). This keyword-matches
-// "what to improve" notes across recent matches so the practice nudge has
-// something real to show until that's wired up.
+const LOOKBACK = 8;
+
+// --- Heuristic fallback ---
+// Used when OPENROUTER_API_KEY isn't configured, or the API call fails —
+// keeps the practice nudge working even with no AI wired up. See
+// src/app/api/practice-tips+api.ts for the real AI path.
 interface KeywordRule {
   keyword: RegExp;
   label: string;
@@ -40,26 +47,18 @@ const RULES: KeywordRule[] = [
   },
 ];
 
-const LOOKBACK = 5;
-// A single mention is enough to surface a nudge — no need to wait for a
-// pattern across several matches before saying anything.
-const THRESHOLD = 1;
-
-function describe(label: string, matchingCount: number, recentCount: number): string {
+function describeHeuristic(label: string, matchingCount: number, recentCount: number): string {
   if (recentCount === 1) return `Your ${label} came up in your last match.`;
   if (matchingCount === 1) return `Your ${label} came up in a recent match.`;
   return `Your ${label} got flagged in ${matchingCount} of your last ${recentCount} matches.`;
 }
 
-export async function refreshPracticeInsights(playerId: string): Promise<void> {
-  const recent = (await listMatches(playerId)).slice(0, LOOKBACK);
-  if (recent.length < THRESHOLD) return;
-
+async function runHeuristic(playerId: string, recent: Match[]): Promise<void> {
   const existing = await listInsights(playerId);
 
   for (const rule of RULES) {
     const matching = recent.filter((m) => rule.keyword.test(m.selfReflection.whatToImprove));
-    if (matching.length < THRESHOLD) continue;
+    if (matching.length === 0) continue;
 
     const alreadyActive = existing.some(
       (i) => i.status === 'active' && i.patternDescription.toLowerCase().includes(rule.label)
@@ -69,11 +68,79 @@ export async function refreshPracticeInsights(playerId: string): Promise<void> {
     const insight: PracticeInsight = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       ownerPlayerId: playerId,
-      patternDescription: describe(rule.label, matching.length, recent.length),
+      patternDescription: describeHeuristic(rule.label, matching.length, recent.length),
       suggestedDrill: rule.drill,
       sourceMatchIds: matching.map((m) => m.id),
       status: 'active',
     };
     await saveInsight(playerId, insight);
   }
+}
+
+// --- Real AI path ---
+
+interface AiPattern {
+  pattern: string;
+  drill: string;
+}
+
+async function fetchAiPatterns(recent: Match[]): Promise<AiPattern[] | null> {
+  try {
+    const res = await fetch('/api/practice-tips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        matches: recent.map((m) => ({
+          date: m.date,
+          result: m.result,
+          whatWentWell: m.selfReflection.whatWentWell,
+          whatToImprove: m.selfReflection.whatToImprove,
+        })),
+      }),
+    });
+    const data = await res.json();
+    if (data.error || !Array.isArray(data.patterns)) return null;
+    return data.patterns;
+  } catch {
+    return null;
+  }
+}
+
+export async function refreshPracticeInsights(playerId: string): Promise<void> {
+  const recent = (await listMatches(playerId)).slice(0, LOOKBACK); // already most-recent-first
+  if (recent.length === 0) return;
+
+  // Skip re-analysis if nothing new has been logged since last time — avoids
+  // firing an API call on every screen focus.
+  const latestId = recent[0].id;
+  const lastAnalyzed = await getLastAnalyzedMatchId(playerId);
+  if (lastAnalyzed === latestId) return;
+
+  const aiPatterns = await fetchAiPatterns(recent);
+
+  if (aiPatterns && aiPatterns.length > 0) {
+    // Fresh AI analysis supersedes the previous active nudges.
+    const existing = await listInsights(playerId);
+    await Promise.all(
+      existing
+        .filter((i) => i.status === 'active')
+        .map((i) => saveInsight(playerId, { ...i, status: 'dismissed' }))
+    );
+    await Promise.all(
+      aiPatterns.map((p) =>
+        saveInsight(playerId, {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          ownerPlayerId: playerId,
+          patternDescription: p.pattern,
+          suggestedDrill: p.drill,
+          sourceMatchIds: recent.map((m) => m.id),
+          status: 'active',
+        })
+      )
+    );
+  } else {
+    await runHeuristic(playerId, recent);
+  }
+
+  await setLastAnalyzedMatchId(playerId, latestId);
 }

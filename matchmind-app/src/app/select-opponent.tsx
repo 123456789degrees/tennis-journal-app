@@ -1,3 +1,4 @@
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Fuse from 'fuse.js';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -9,7 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import type { Match, Opponent, Playstyle } from '@/data/models';
 import { setPendingOpponentSelection } from '@/data/selection-bridge';
 import { createOpponent, listMatches, listOpponents } from '@/data/storage';
@@ -78,17 +79,21 @@ export default function SelectOpponentScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>
-          🎾 Opponents
-        </ThemedText>
+        <ThemedView style={styles.titleRow}>
+          <MaterialCommunityIcons name="tennis-ball" size={22} color={theme.primary} />
+          <ThemedText type="title">Opponents</ThemedText>
+        </ThemedView>
 
-        <TextInput
-          style={[styles.searchInput, inputStyle]}
-          placeholder="Search opponent (fuzzy — spelling/nicknames ok)..."
-          placeholderTextColor={theme.textSecondary}
-          value={query}
-          onChangeText={setQuery}
-        />
+        <ThemedView style={[styles.searchRow, inputStyle]}>
+          <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search opponent (fuzzy — spelling/nicknames ok)..."
+            placeholderTextColor={theme.textSecondary}
+            value={query}
+            onChangeText={setQuery}
+          />
+        </ThemedView>
 
         <FlatList
           data={results}
@@ -108,16 +113,28 @@ export default function SelectOpponentScreen() {
               ]}
               onPress={() => selectOpponent(item)}
             >
-              <ThemedText type="smallBold">{item.name}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {record(item.id, matches)} · {item.playstyle}
-              </ThemedText>
+              <ThemedView style={styles.rowContent}>
+                <MaterialCommunityIcons name="tennis-ball-outline" size={16} color={theme.textSecondary} />
+                <ThemedView style={styles.rowTextCol}>
+                  <ThemedText type="smallBold">{item.name}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {record(item.id, matches)} · {item.playstyle}
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
+              <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
             </Pressable>
           )}
         />
 
         {!showAddForm ? (
-          <Button label="+ Add new opponent" variant="accent" onPress={() => setShowAddForm(true)} fullWidth />
+          <Button
+            label="Add new opponent"
+            icon="person-add-outline"
+            variant="accent"
+            onPress={() => setShowAddForm(true)}
+            fullWidth
+          />
         ) : (
           <Card tint="accent">
             <ThemedText type="smallBold">New opponent</ThemedText>
@@ -135,6 +152,7 @@ export default function SelectOpponentScreen() {
             <ThemedView style={styles.formSpacing}>
               <Button
                 label="Create & select"
+                icon="checkmark-circle-outline"
                 variant="primary"
                 onPress={handleAddNew}
                 disabled={!addingName.trim() || !addingPlaystyle}
@@ -150,12 +168,26 @@ export default function SelectOpponentScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: { flex: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.three, gap: Spacing.three },
-  title: {},
-  searchInput: {
+  container: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    gap: Spacing.three,
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     borderWidth: 1,
     borderRadius: Radius.small,
     paddingHorizontal: Spacing.three,
+  },
+  searchInput: {
+    flex: 1,
     paddingVertical: Spacing.two,
     fontSize: 16,
   },
@@ -168,9 +200,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  rowContent: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flex: 1 },
+  rowTextCol: { gap: 0 },
   emptyText: { paddingVertical: Spacing.three, textAlign: 'center' },
   fieldSpacing: { marginTop: Spacing.two },
   formSpacing: { marginTop: Spacing.two },

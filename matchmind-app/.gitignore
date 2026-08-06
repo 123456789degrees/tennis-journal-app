@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Vercel
+.vercel
+
 # Native
 .kotlin/
 *.orig.*
@@ -30,7 +33,8 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (real secrets live here — .env.example is the committed template)
+.env
 .env*.local
 
 # typescript

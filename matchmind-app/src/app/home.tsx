@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
@@ -7,7 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Radius, Spacing } from '@/constants/theme';
+import { Logo } from '@/components/ui/logo';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { refreshPracticeInsights } from '@/data/insights';
 import type { Match, Opponent, PracticeInsight } from '@/data/models';
 import { listInsights, listMatches, listOpponents } from '@/data/storage';
@@ -43,35 +45,32 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
         <ThemedView style={styles.header}>
+          <Logo size={36} color={theme.primary} />
           <ThemedText type="title" style={styles.headerTitle}>
-            🎾 MatchMind
+            MatchMind
           </ThemedText>
         </ThemedView>
 
-        <Pressable
+        <Button
+          label="Log a match"
+          icon="add-circle"
+          size="large"
+          fullWidth
           onPress={() => router.push('/log-match')}
-          style={({ pressed }) => [
-            styles.logButton,
-            {
-              backgroundColor: theme.primary,
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-            },
-          ]}
-        >
-          <ThemedText style={[styles.logButtonText, { color: theme.primaryText }]}>
-            + Log a match
-          </ThemedText>
-        </Pressable>
+        />
 
         {nudge ? (
           <Card tint="accent">
-            <ThemedText type="smallBold">⚡ Practice nudge</ThemedText>
+            <ThemedView style={styles.nudgeHeaderRow}>
+              <Ionicons name="flash" size={16} color={theme.primary} />
+              <ThemedText type="smallBold">Practice nudge</ThemedText>
+            </ThemedView>
             <ThemedText>{nudge.patternDescription}</ThemedText>
-            <Pressable onPress={() => router.push('/practice')}>
+            <Pressable style={styles.linkRow} onPress={() => router.push('/practice')}>
               <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
-                See drill →
+                See drill
               </ThemedText>
+              <Ionicons name="chevron-forward" size={14} color={theme.primary} />
             </Pressable>
           </Card>
         ) : null}
@@ -111,13 +110,31 @@ export default function HomeScreen() {
 
         <ThemedView style={styles.navRow}>
           <ThemedView style={styles.navButtonWrap}>
-            <Button label="Opponents / search" variant="outline" onPress={() => router.push('/select-opponent')} fullWidth />
+            <Button
+              label="Opponents"
+              icon="people-outline"
+              variant="outline"
+              onPress={() => router.push('/select-opponent')}
+              fullWidth
+            />
           </ThemedView>
           <ThemedView style={styles.navButtonWrap}>
-            <Button label="All matches" variant="outline" onPress={() => router.push('/match-history')} fullWidth />
+            <Button
+              label="All matches"
+              icon="list-outline"
+              variant="outline"
+              onPress={() => router.push('/match-history')}
+              fullWidth
+            />
           </ThemedView>
           <ThemedView style={styles.navButtonWrap}>
-            <Button label="Settings" variant="ghost" onPress={() => router.push('/settings')} fullWidth />
+            <Button
+              label="Settings"
+              icon="settings-outline"
+              variant="ghost"
+              onPress={() => router.push('/settings')}
+              fullWidth
+            />
           </ThemedView>
         </ThemedView>
       </ThemedView>
@@ -127,15 +144,19 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: { flex: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.two, gap: Spacing.three },
-  header: { alignItems: 'center', marginBottom: Spacing.one },
-  headerTitle: { fontSize: 26 },
-  logButton: {
-    paddingVertical: Spacing.four,
-    borderRadius: Radius.large,
-    alignItems: 'center',
+  container: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+    gap: Spacing.three,
   },
-  logButtonText: { fontSize: 19, fontWeight: '800' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.one, marginBottom: Spacing.one },
+  headerTitle: { fontSize: 26 },
+  nudgeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   sectionTitle: { fontSize: 20 },
   emptyText: { paddingVertical: Spacing.three },
   matchRow: {

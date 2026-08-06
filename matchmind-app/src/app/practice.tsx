@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -5,9 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { refreshPracticeInsights } from '@/data/insights';
 import type { CorrectedIssue, PracticeInsight } from '@/data/models';
 import { listInsights, saveInsight } from '@/data/storage';
@@ -58,7 +58,10 @@ export default function PracticeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <ThemedText type="title">🤖 Practice / Insights</ThemedText>
+        <ThemedView style={styles.titleRow}>
+          <Ionicons name="sparkles" size={22} color={theme.primary} />
+          <ThemedText type="title">Practice / Insights</ThemedText>
+        </ThemedView>
         <ThemedText type="small" themeColor="textSecondary">
           Surfaces on its own from your recent matches — you don&apos;t go looking for it.
         </ThemedText>
@@ -74,8 +77,19 @@ export default function PracticeScreen() {
         ) : (
           insights.map((insight) => (
             <Card key={insight.id} tint="accent">
-              <ThemedText type="smallBold">🤖 {insight.patternDescription}</ThemedText>
-              <ThemedText>Suggested drill: {insight.suggestedDrill}</ThemedText>
+              <ThemedView style={styles.cardHeaderRow}>
+                <Ionicons name="sparkles" size={16} color={theme.text} />
+                <ThemedText type="smallBold" style={styles.patternText}>
+                  {insight.patternDescription}
+                </ThemedText>
+              </ThemedView>
+              <ThemedView style={styles.cardHeaderRow}>
+                <Ionicons name="construct-outline" size={16} color={theme.textSecondary} />
+                <ThemedText style={styles.patternText}>
+                  <ThemedText type="smallBold">Suggested drill: </ThemedText>
+                  {insight.suggestedDrill}
+                </ThemedText>
+              </ThemedView>
 
               {expandedId === insight.id ? (
                 <ThemedView style={styles.drillDetail}>
@@ -87,17 +101,26 @@ export default function PracticeScreen() {
               ) : null}
 
               <ThemedView style={styles.actionsRow}>
-                <Pressable onPress={() => setExpandedId(expandedId === insight.id ? null : insight.id)}>
+                <Pressable
+                  style={styles.actionLink}
+                  onPress={() => setExpandedId(expandedId === insight.id ? null : insight.id)}
+                >
+                  <Ionicons name="book-outline" size={14} color={theme.primary} />
                   <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
                     {expandedId === insight.id ? 'Hide drill' : 'Open drill'}
                   </ThemedText>
                 </Pressable>
-                <Pressable onPress={() => setCorrectingId(correctingId === insight.id ? null : insight.id)}>
+                <Pressable
+                  style={styles.actionLink}
+                  onPress={() => setCorrectingId(correctingId === insight.id ? null : insight.id)}
+                >
                   <ThemedText type="linkPrimary" style={{ color: theme.text, fontWeight: '700' }}>
-                    Not quite →
+                    Not quite
                   </ThemedText>
+                  <Ionicons name="chevron-forward" size={14} color={theme.text} />
                 </Pressable>
-                <Pressable onPress={() => handleDismiss(insight)}>
+                <Pressable style={styles.actionLink} onPress={() => handleDismiss(insight)}>
+                  <Ionicons name="close-outline" size={14} color={theme.textSecondary} />
                   <ThemedText type="small" themeColor="textSecondary">
                     Dismiss
                   </ThemedText>
@@ -113,7 +136,8 @@ export default function PracticeScreen() {
                       style={styles.issueOption}
                       onPress={() => handleCorrect(insight, opt.value)}
                     >
-                      <ThemedText>○ {opt.label}</ThemedText>
+                      <Ionicons name="radio-button-off" size={16} color={theme.text} />
+                      <ThemedText>{opt.label}</ThemedText>
                     </Pressable>
                   ))}
                   <ThemedText type="small" themeColor="textSecondary">
@@ -131,9 +155,20 @@ export default function PracticeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: { padding: Spacing.four, gap: Spacing.three, paddingBottom: Spacing.six },
+  container: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    padding: Spacing.four,
+    gap: Spacing.three,
+    paddingBottom: Spacing.six,
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
+  patternText: { flex: 1 },
   drillDetail: { marginTop: Spacing.one },
   actionsRow: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two, flexWrap: 'wrap' },
+  actionLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   correctionBox: { marginTop: Spacing.two, gap: Spacing.one },
-  issueOption: { paddingVertical: Spacing.one },
+  issueOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, paddingVertical: Spacing.one },
 });

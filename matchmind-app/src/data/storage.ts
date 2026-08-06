@@ -10,6 +10,7 @@ const KEYS = {
   opponents: (playerId: string) => `matchmind:opponents:${playerId}`,
   matches: (playerId: string) => `matchmind:matches:${playerId}`,
   insights: (playerId: string) => `matchmind:insights:${playerId}`,
+  lastAnalyzedMatchId: (playerId: string) => `matchmind:lastAnalyzedMatchId:${playerId}`,
 };
 
 function newId(): string {
@@ -56,6 +57,26 @@ export async function savePlayer(player: Player): Promise<void> {
 
 async function getAllPlayerIds(): Promise<string[]> {
   return readJson<string[]>(KEYS.allPlayerIds, []);
+}
+
+// Deletes one account and everything under it. Destructive and irreversible —
+// used by Settings' "Delete account" control.
+export async function deletePlayer(playerId: string): Promise<void> {
+  await Promise.all([
+    AsyncStorage.removeItem(KEYS.player(playerId)),
+    AsyncStorage.removeItem(KEYS.opponents(playerId)),
+    AsyncStorage.removeItem(KEYS.matches(playerId)),
+    AsyncStorage.removeItem(KEYS.insights(playerId)),
+  ]);
+  const ids = await getAllPlayerIds();
+  await writeJson(
+    KEYS.allPlayerIds,
+    ids.filter((id) => id !== playerId)
+  );
+  const currentId = await getCurrentPlayerId();
+  if (currentId === playerId) {
+    await AsyncStorage.removeItem(KEYS.currentPlayerId);
+  }
 }
 
 export async function findPlayerByEmail(email: string): Promise<Player | null> {
@@ -172,6 +193,17 @@ export async function deleteMatch(
     KEYS.matches(playerId),
     all.filter((m) => m.id !== matchId)
   );
+}
+
+export async function getLastAnalyzedMatchId(playerId: string): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.lastAnalyzedMatchId(playerId));
+}
+
+export async function setLastAnalyzedMatchId(
+  playerId: string,
+  matchId: string
+): Promise<void> {
+  await AsyncStorage.setItem(KEYS.lastAnalyzedMatchId(playerId), matchId);
 }
 
 // --- Practice insights ---

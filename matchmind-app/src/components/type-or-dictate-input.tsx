@@ -1,7 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -42,7 +42,6 @@ export function TypeOrDictateField({
       return;
     }
     if (!webSpeechSupported) {
-      // eslint-disable-next-line no-alert
       alert(
         'Voice dictation needs a custom dev build on a real device. Typing works fine for now.'
       );
@@ -97,7 +96,11 @@ export function TypeOrDictateField({
           },
         ]}
       >
-        <ThemedText>{listening ? '⏹️' : '🎤'}</ThemedText>
+        <Ionicons
+          name={listening ? 'stop-circle' : 'mic-outline'}
+          size={20}
+          color={listening ? '#FFFFFF' : theme.text}
+        />
       </Pressable>
     </View>
   );

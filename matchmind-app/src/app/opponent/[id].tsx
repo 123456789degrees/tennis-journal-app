@@ -1,3 +1,4 @@
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -7,8 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Spacing } from '@/constants/theme';
-import { generateOpponentTip } from '@/data/ai-tips';
+import { ShotStat } from '@/components/ui/shot-stat';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { fetchOpponentTip } from '@/data/ai-tips';
 import type { Match, Opponent } from '@/data/models';
 import { summarizeScouting } from '@/data/scouting-summary';
 import { getOpponent, listMatchesForOpponent } from '@/data/storage';
@@ -23,11 +25,22 @@ export default function OpponentDetailScreen() {
 
   const [opponent, setOpponent] = useState<Opponent | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [aiTip, setAiTip] = useState('');
+  const [aiTipLoading, setAiTipLoading] = useState(false);
 
   async function load() {
     if (!playerId || !id) return;
-    setOpponent(await getOpponent(playerId, id));
-    setMatches(await listMatchesForOpponent(playerId, id));
+    const o = await getOpponent(playerId, id);
+    const m = await listMatchesForOpponent(playerId, id);
+    setOpponent(o);
+    setMatches(m);
+    if (o) {
+      setAiTipLoading(true);
+      const summary = summarizeScouting(m);
+      const tip = await fetchOpponentTip(o.name, o.playstyle, m, summary);
+      setAiTip(tip);
+      setAiTipLoading(false);
+    }
   }
 
   useFocusEffect(
@@ -56,9 +69,12 @@ export default function OpponentDetailScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
         <Card>
-          <ThemedText type="title" style={styles.name}>
-            🎾 {opponent.name}
-          </ThemedText>
+          <ThemedView style={styles.nameRow}>
+            <MaterialCommunityIcons name="tennis-ball" size={22} color={theme.primary} />
+            <ThemedText type="title" style={styles.name}>
+              {opponent.name}
+            </ThemedText>
+          </ThemedView>
           <ThemedText>
             Playstyle: <ThemedText type="smallBold">{opponent.playstyle}</ThemedText> · Head-to-head:{' '}
             <ThemedText type="smallBold">
@@ -70,10 +86,13 @@ export default function OpponentDetailScreen() {
         <ThemedText type="subtitle" style={styles.sectionTitle}>
           Scouting profile
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          🤖 AI summary across all {matches.length} match{matches.length === 1 ? '' : 'es'} you&apos;ve
-          logged against {opponent.name} — weighted toward the most recent.
-        </ThemedText>
+        <ThemedView style={styles.aiCaptionRow}>
+          <Ionicons name="sparkles-outline" size={14} color={theme.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.aiCaptionText}>
+            AI summary across all {matches.length} match{matches.length === 1 ? '' : 'es'} you&apos;ve
+            logged against {opponent.name} — weighted toward the most recent.
+          </ThemedText>
+        </ThemedView>
 
         {!hasAnyScouting ? (
           <Card>
@@ -83,37 +102,20 @@ export default function OpponentDetailScreen() {
             </ThemedText>
           </Card>
         ) : (
-          <>
-            {summary.forehand ? (
-              <Card>
-                <ThemedText type="smallBold">Forehand</ThemedText>
-                <ThemedText>{summary.forehand}</ThemedText>
-              </Card>
-            ) : null}
-            {summary.serve ? (
-              <Card>
-                <ThemedText type="smallBold">Serve</ThemedText>
-                <ThemedText>{summary.serve}</ThemedText>
-              </Card>
-            ) : null}
-            {summary.backhand ? (
-              <Card>
-                <ThemedText type="smallBold">Backhand</ThemedText>
-                <ThemedText>{summary.backhand}</ThemedText>
-              </Card>
-            ) : null}
-            {summary.other ? (
-              <Card>
-                <ThemedText type="smallBold">Other notes</ThemedText>
-                <ThemedText>{summary.other}</ThemedText>
-              </Card>
-            ) : null}
-          </>
+          <ThemedView style={styles.shotGrid}>
+            {summary.forehand ? <ShotStat type="Forehand" value={summary.forehand} /> : null}
+            {summary.serve ? <ShotStat type="Serve" value={summary.serve} /> : null}
+            {summary.backhand ? <ShotStat type="Backhand" value={summary.backhand} /> : null}
+            {summary.other ? <ShotStat type="Other" value={summary.other} /> : null}
+          </ThemedView>
         )}
 
         <Card tint="accent">
-          <ThemedText type="smallBold">🤖 How to beat them (AI — bonus)</ThemedText>
-          <ThemedText>{generateOpponentTip(summary)}</ThemedText>
+          <ThemedView style={styles.cardHeaderRow}>
+            <Ionicons name="sparkles" size={16} color={theme.text} />
+            <ThemedText type="smallBold">How to beat them (AI — bonus)</ThemedText>
+          </ThemedView>
+          <ThemedText>{aiTipLoading ? 'Thinking...' : aiTip}</ThemedText>
         </Card>
 
         <ThemedText type="subtitle" style={styles.sectionTitle}>
@@ -153,6 +155,7 @@ export default function OpponentDetailScreen() {
 
         <Button
           label={`Log a match vs. ${opponent.name}`}
+          icon="add-circle"
           onPress={() => router.push(`/log-match?opponentId=${opponent.id}`)}
           size="large"
           fullWidth
@@ -164,10 +167,22 @@ export default function OpponentDetailScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: { padding: Spacing.four, gap: Spacing.three, paddingBottom: Spacing.six },
+  container: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    padding: Spacing.four,
+    gap: Spacing.three,
+    paddingBottom: Spacing.six,
+  },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   name: { fontSize: 26 },
   sectionTitle: { fontSize: 20, marginTop: Spacing.two },
+  aiCaptionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
+  aiCaptionText: { flex: 1 },
+  shotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   emptyText: { paddingVertical: Spacing.two },
   matchRow: {
     paddingVertical: Spacing.two,
