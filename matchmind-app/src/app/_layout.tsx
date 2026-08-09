@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { TopNavActions } from '@/components/top-nav-actions';
 import { Colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -24,6 +25,7 @@ export default function RootLayout() {
           headerTintColor: theme.primaryText,
           headerTitleStyle: { fontWeight: '700' },
           contentStyle: { backgroundColor: theme.background },
+          headerRight: () => <TopNavActions color={theme.primaryText} />,
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />

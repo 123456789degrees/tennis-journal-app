@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Image, Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { fetchDrillVideos, type DrillVideo } from '@/data/drill-videos';
 import { refreshPracticeInsights } from '@/data/insights';
 import type { CorrectedIssue, PracticeInsight } from '@/data/models';
 import { listInsights, saveInsight } from '@/data/storage';
@@ -25,12 +26,31 @@ export default function PracticeScreen() {
   const playerId = useCurrentPlayerId();
   const [insights, setInsights] = useState<PracticeInsight[]>([]);
   const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [videosByInsight, setVideosByInsight] = useState<Record<string, DrillVideo[]>>({});
+  const [loadingVideoIds, setLoadingVideoIds] = useState<Record<string, boolean>>({});
+  // A ref (not state) so the "already fetched?" check stays correct even
+  // when called from a useFocusEffect callback holding a stale closure —
+  // refs are a stable mutable box every closure reads the same live value
+  // from, unlike state captured at closure-creation time.
+  const fetchedIds = useRef(new Set<string>());
+
+  function loadVideosFor(insight: PracticeInsight) {
+    if (fetchedIds.current.has(insight.id)) return;
+    fetchedIds.current.add(insight.id);
+    setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
+    fetchDrillVideos(insight.suggestedDrill).then((videos) => {
+      setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
+      setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: false }));
+    });
+  }
 
   async function load() {
     if (!playerId) return;
     await refreshPracticeInsights(playerId);
     const all = await listInsights(playerId);
-    setInsights(all.filter((i) => i.status === 'active'));
+    const active = all.filter((i) => i.status === 'active');
+    setInsights(active);
+    active.forEach(loadVideosFor);
   }
 
   useFocusEffect(
@@ -89,6 +109,33 @@ export default function PracticeScreen() {
                   {insight.suggestedDrill}
                 </ThemedText>
               </ThemedView>
+
+              {loadingVideoIds[insight.id] ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Finding videos...
+                </ThemedText>
+              ) : (videosByInsight[insight.id]?.length ?? 0) > 0 ? (
+                <ThemedView style={styles.videoRow}>
+                  {videosByInsight[insight.id].map((video) => (
+                    <Pressable
+                      key={video.id}
+                      style={styles.videoCard}
+                      onPress={() => Linking.openURL(video.url)}
+                    >
+                      {video.thumbnail ? (
+                        <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
+                      ) : (
+                        <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
+                          <Ionicons name="logo-youtube" size={22} color="#FF0000" />
+                        </ThemedView>
+                      )}
+                      <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
+                        {video.title}
+                      </ThemedText>
+                    </Pressable>
+                  ))}
+                </ThemedView>
+              ) : null}
 
               <ThemedView style={styles.actionsRow}>
                 <Pressable
@@ -151,4 +198,14 @@ const styles = StyleSheet.create({
   actionLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   correctionBox: { marginTop: Spacing.two, gap: Spacing.one },
   issueOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, paddingVertical: Spacing.one },
+  videoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one },
+  videoCard: { width: 160, gap: Spacing.half },
+  videoThumb: {
+    width: 160,
+    height: 90,
+    borderRadius: Radius.small,
+    backgroundColor: '#00000022',
+  },
+  videoThumbFallback: { alignItems: 'center', justifyContent: 'center' },
+  videoTitle: { lineHeight: 16 },
 });

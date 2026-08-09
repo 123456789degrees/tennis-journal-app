@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TopNavActions } from '@/components/top-nav-actions';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
@@ -15,6 +16,11 @@ import type { Match, Opponent, PracticeInsight } from '@/data/models';
 import { listInsights, listMatches, listOpponents } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
+
+function truncate(text: string, max: number): string {
+  const trimmed = text.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -37,18 +43,21 @@ export default function HomeScreen() {
     }, [playerId])
   );
 
-  function opponentName(opponentId: string) {
-    return opponents.find((o) => o.id === opponentId)?.name ?? 'Unknown';
+  function getOpponent(opponentId: string) {
+    return opponents.find((o) => o.id === opponentId);
   }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
         <ThemedView style={styles.header}>
-          <Logo size={36} color={theme.primary} />
-          <ThemedText type="title" style={styles.headerTitle}>
-            MatchMind
-          </ThemedText>
+          <ThemedView style={styles.brandRow}>
+            <Logo size={36} color={theme.primary} />
+            <ThemedText type="title" style={styles.headerTitle}>
+              MatchMind
+            </ThemedText>
+          </ThemedView>
+          <TopNavActions color={theme.primary} />
         </ThemedView>
 
         <Button
@@ -86,57 +95,45 @@ export default function HomeScreen() {
               No matches yet — log your first one above.
             </ThemedText>
           }
-          renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [
-                styles.matchRow,
-                { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
-              ]}
-              onPress={() => router.push({ pathname: '/match/[id]', params: { id: item.id } })}
-            >
-              <ThemedText>
-                vs. {opponentName(item.opponentId)} —{' '}
-                <ThemedText style={{ color: item.result === 'Win' ? theme.success : theme.danger, fontWeight: '700' }}>
-                  {item.result === 'Win' ? 'W' : 'L'}
-                </ThemedText>{' '}
-                {item.score.join(', ')}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {new Date(item.date).toLocaleDateString()}
-              </ThemedText>
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            const opp = getOpponent(item.opponentId);
+            const improve = item.selfReflection?.whatToImprove?.trim();
+            return (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.matchRow,
+                  { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
+                ]}
+                onPress={() => router.push({ pathname: '/match/[id]', params: { id: item.id } })}
+              >
+                <ThemedView style={styles.matchRowTop}>
+                  <ThemedText>
+                    vs. {opp?.name ?? 'Unknown'} —{' '}
+                    <ThemedText
+                      style={{
+                        color: item.result === 'Win' ? theme.success : theme.danger,
+                        fontWeight: '700',
+                      }}
+                    >
+                      {item.result === 'Win' ? 'W' : 'L'}
+                    </ThemedText>{' '}
+                    {item.score.join(', ')}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {new Date(item.date).toLocaleDateString()}
+                  </ThemedText>
+                </ThemedView>
+                {opp?.playstyle || improve ? (
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.matchRowMeta}>
+                    {opp?.playstyle}
+                    {opp?.playstyle && improve ? ' · ' : ''}
+                    {improve ? `Improve: ${truncate(improve, 44)}` : ''}
+                  </ThemedText>
+                ) : null}
+              </Pressable>
+            );
+          }}
         />
-
-        <ThemedView style={styles.navRow}>
-          <ThemedView style={styles.navButtonWrap}>
-            <Button
-              label="Opponents"
-              icon="people-outline"
-              variant="outline"
-              onPress={() => router.push('/select-opponent')}
-              fullWidth
-            />
-          </ThemedView>
-          <ThemedView style={styles.navButtonWrap}>
-            <Button
-              label="All matches"
-              icon="list-outline"
-              variant="outline"
-              onPress={() => router.push('/match-history')}
-              fullWidth
-            />
-          </ThemedView>
-          <ThemedView style={styles.navButtonWrap}>
-            <Button
-              label="Settings"
-              icon="settings-outline"
-              variant="ghost"
-              onPress={() => router.push('/settings')}
-              fullWidth
-            />
-          </ThemedView>
-        </ThemedView>
       </ThemedView>
     </SafeAreaView>
   );
@@ -153,8 +150,16 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     gap: Spacing.three,
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.one, marginBottom: Spacing.one },
-  headerTitle: { fontSize: 26 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+    marginBottom: Spacing.one,
+  },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  headerTitle: { fontSize: 24 },
   nudgeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   sectionTitle: { fontSize: 20 },
@@ -162,7 +167,8 @@ const styles = StyleSheet.create({
   matchRow: {
     paddingVertical: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.half,
   },
-  navRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: 'auto', paddingBottom: Spacing.three },
-  navButtonWrap: { flexGrow: 1, minWidth: 100 },
+  matchRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  matchRowMeta: {},
 });

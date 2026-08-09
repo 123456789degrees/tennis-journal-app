@@ -11,6 +11,11 @@ import { listMatches, listOpponents } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
+function truncate(text: string, max: number): string {
+  const trimmed = text.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
+}
+
 export default function MatchHistoryScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -27,13 +32,13 @@ export default function MatchHistoryScreen() {
     }, [playerId])
   );
 
-  function opponentName(opponentId: string) {
-    return opponents.find((o) => o.id === opponentId)?.name ?? 'Unknown';
+  function getOpponent(opponentId: string) {
+    return opponents.find((o) => o.id === opponentId);
   }
 
   const filtered = filter.trim()
     ? matches.filter((m) =>
-        opponentName(m.opponentId).toLowerCase().includes(filter.trim().toLowerCase())
+        (getOpponent(m.opponentId)?.name ?? '').toLowerCase().includes(filter.trim().toLowerCase())
       )
     : matches;
 
@@ -62,31 +67,44 @@ export default function MatchHistoryScreen() {
                 : 'No matches against that opponent.'}
             </ThemedText>
           }
-          renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [
-                styles.row,
-                { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
-              ]}
-              onPress={() => router.push({ pathname: '/match/[id]', params: { id: item.id } })}
-            >
-              <ThemedText>
-                vs. {opponentName(item.opponentId)} —{' '}
-                <ThemedText
-                  style={{
-                    color: item.result === 'Win' ? theme.success : theme.danger,
-                    fontWeight: '700',
-                  }}
-                >
-                  {item.result === 'Win' ? 'W' : 'L'}
-                </ThemedText>{' '}
-                {item.score.join(', ')}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {new Date(item.date).toLocaleDateString()}
-              </ThemedText>
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            const opp = getOpponent(item.opponentId);
+            const improve = item.selfReflection?.whatToImprove?.trim();
+            return (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.row,
+                  { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
+                ]}
+                onPress={() => router.push({ pathname: '/match/[id]', params: { id: item.id } })}
+              >
+                <ThemedView style={styles.rowTop}>
+                  <ThemedText>
+                    vs. {opp?.name ?? 'Unknown'} —{' '}
+                    <ThemedText
+                      style={{
+                        color: item.result === 'Win' ? theme.success : theme.danger,
+                        fontWeight: '700',
+                      }}
+                    >
+                      {item.result === 'Win' ? 'W' : 'L'}
+                    </ThemedText>{' '}
+                    {item.score.join(', ')}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {new Date(item.date).toLocaleDateString()}
+                  </ThemedText>
+                </ThemedView>
+                {opp?.playstyle || improve ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {opp?.playstyle}
+                    {opp?.playstyle && improve ? ' · ' : ''}
+                    {improve ? `Improve: ${truncate(improve, 44)}` : ''}
+                  </ThemedText>
+                ) : null}
+              </Pressable>
+            );
+          }}
         />
       </ThemedView>
     </SafeAreaView>
@@ -116,5 +134,7 @@ const styles = StyleSheet.create({
   row: {
     paddingVertical: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.half,
   },
+  rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
