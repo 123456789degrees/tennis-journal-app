@@ -10,8 +10,13 @@ import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { fetchDrillVideos, shortenForSearch, type DrillVideo } from '@/data/drill-videos';
 import { refreshPracticeInsights } from '@/data/insights';
-import type { CorrectedIssue, PracticeInsight } from '@/data/models';
-import { listInsights, saveInsight } from '@/data/storage';
+import type { ChannelPreference, CorrectedIssue, PracticeInsight } from '@/data/models';
+import {
+  listChannelPreferences,
+  listInsights,
+  saveChannelPreference,
+  saveInsight,
+} from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -36,20 +41,25 @@ export default function PracticeScreen() {
   const playerId = useCurrentPlayerId();
   const [insights, setInsights] = useState<PracticeInsight[]>([]);
   const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [ratingId, setRatingId] = useState<string | null>(null);
   const [videosByInsight, setVideosByInsight] = useState<Record<string, DrillVideo[]>>({});
   const [loadingVideoIds, setLoadingVideoIds] = useState<Record<string, boolean>>({});
+  const [channelPrefs, setChannelPrefs] = useState<ChannelPreference[]>([]);
   // A ref (not state) so the "already fetched?" check stays correct even
   // when called from a useFocusEffect callback holding a stale closure —
   // refs are a stable mutable box every closure reads the same live value
   // from, unlike state captured at closure-creation time.
   const fetchedIds = useRef(new Set<string>());
 
-  function loadVideosFor(insight: PracticeInsight) {
+  function loadVideosFor(insight: PracticeInsight, prefs: ChannelPreference[]) {
     if (fetchedIds.current.has(insight.id)) return;
     fetchedIds.current.add(insight.id);
     setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
     const query = insight.drillSearchQuery || shortenForSearch(insight.suggestedDrill);
-    fetchDrillVideos(query).then((videos) => {
+    fetchDrillVideos(query, {
+      likedChannelIds: prefs.filter((p) => p.liked).map((p) => p.channelId),
+      dislikedChannelIds: prefs.filter((p) => !p.liked).map((p) => p.channelId),
+    }).then((videos) => {
       setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
       setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: false }));
     });
@@ -61,7 +71,9 @@ export default function PracticeScreen() {
     const all = await listInsights(playerId);
     const active = all.filter((i) => i.status === 'active');
     setInsights(active);
-    active.forEach(loadVideosFor);
+    const prefs = await listChannelPreferences(playerId);
+    setChannelPrefs(prefs);
+    active.forEach((insight) => loadVideosFor(insight, prefs));
   }
 
   useFocusEffect(
@@ -85,6 +97,42 @@ export default function PracticeScreen() {
     load();
   }
 
+  async function completeInsight(insight: PracticeInsight) {
+    if (!playerId) return;
+    await saveInsight(playerId, { ...insight, status: 'completed' });
+    setRatingId(null);
+    load();
+  }
+
+  function handleMarkDone(insight: PracticeInsight) {
+    const ratable = (videosByInsight[insight.id] ?? []).filter((v) => v.channelId);
+    if (ratable.length === 0) {
+      completeInsight(insight);
+    } else {
+      setRatingId(insight.id);
+    }
+  }
+
+  async function rateChannel(video: DrillVideo, liked: boolean) {
+    if (!playerId || !video.channelId) return;
+    const preference: ChannelPreference = {
+      channelId: video.channelId,
+      channelTitle: video.channelTitle,
+      liked,
+      updatedAt: new Date().toISOString(),
+    };
+    await saveChannelPreference(playerId, preference);
+    setChannelPrefs((prev) => {
+      const idx = prev.findIndex((p) => p.channelId === preference.channelId);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = preference;
+        return next;
+      }
+      return [...prev, preference];
+    });
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -105,87 +153,132 @@ export default function PracticeScreen() {
             </ThemedText>
           </Card>
         ) : (
-          insights.map((insight) => (
-            <Card key={insight.id} tint="accent">
-              <ThemedView style={styles.cardHeaderRow}>
-                <Ionicons name="sparkles" size={16} color={theme.text} />
-                <ThemedText type="smallBold" style={styles.patternText}>
-                  {insight.patternDescription}
-                </ThemedText>
-              </ThemedView>
-              <ThemedView style={styles.cardHeaderRow}>
-                <Ionicons name="construct-outline" size={16} color={theme.textSecondary} />
-                <ThemedText style={styles.patternText}>
-                  <ThemedText type="smallBold">Suggested drill: </ThemedText>
-                  {insight.suggestedDrill}
-                </ThemedText>
-              </ThemedView>
+          insights.map((insight) => {
+            const videos = videosByInsight[insight.id] ?? [];
+            const ratableVideos = videos.filter((v) => v.channelId);
+            const isRating = ratingId === insight.id;
+            return (
+              <Card key={insight.id} tint="accent">
+                <ThemedView style={styles.cardHeaderRow}>
+                  <Ionicons name="sparkles" size={16} color={theme.text} />
+                  <ThemedText type="smallBold" style={styles.patternText}>
+                    {insight.patternDescription}
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView style={styles.cardHeaderRow}>
+                  <Ionicons name="construct-outline" size={16} color={theme.textSecondary} />
+                  <ThemedText style={styles.patternText}>
+                    <ThemedText type="smallBold">Suggested drill: </ThemedText>
+                    {insight.suggestedDrill}
+                  </ThemedText>
+                </ThemedView>
 
-              {loadingVideoIds[insight.id] ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  Finding videos...
-                </ThemedText>
-              ) : (videosByInsight[insight.id]?.length ?? 0) > 0 ? (
-                <ThemedView style={styles.videoRow}>
-                  {videosByInsight[insight.id].map((video) => (
-                    <Pressable
-                      key={video.id}
-                      style={styles.videoCard}
-                      {...webLinkProps(video.url)}
-                    >
-                      {video.thumbnail ? (
-                        <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
-                      ) : (
-                        <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
-                          <Ionicons name="logo-youtube" size={22} color="#FF0000" />
+                {loadingVideoIds[insight.id] ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Finding videos...
+                  </ThemedText>
+                ) : videos.length > 0 ? (
+                  <ThemedView style={styles.videoRow}>
+                    {videos.map((video) => (
+                      <Pressable key={video.id} style={styles.videoCard} {...webLinkProps(video.url)}>
+                        {video.thumbnail ? (
+                          <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
+                        ) : (
+                          <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
+                            <Ionicons name="logo-youtube" size={22} color="#FF0000" />
+                          </ThemedView>
+                        )}
+                        <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
+                          {video.title}
+                        </ThemedText>
+                      </Pressable>
+                    ))}
+                  </ThemedView>
+                ) : null}
+
+                {isRating ? (
+                  <ThemedView style={styles.ratingBox}>
+                    <ThemedText type="smallBold">Rate these so we can find more like them</ThemedText>
+                    {ratableVideos.map((video) => {
+                      const pref = channelPrefs.find((p) => p.channelId === video.channelId);
+                      return (
+                        <ThemedView key={video.id} style={styles.ratingRow}>
+                          <ThemedText type="small" numberOfLines={1} style={styles.ratingVideoTitle}>
+                            {video.channelTitle}
+                          </ThemedText>
+                          <Pressable onPress={() => rateChannel(video, true)} hitSlop={8}>
+                            <Ionicons
+                              name={pref?.liked === true ? 'thumbs-up' : 'thumbs-up-outline'}
+                              size={18}
+                              color={theme.success}
+                            />
+                          </Pressable>
+                          <Pressable onPress={() => rateChannel(video, false)} hitSlop={8}>
+                            <Ionicons
+                              name={pref?.liked === false ? 'thumbs-down' : 'thumbs-down-outline'}
+                              size={18}
+                              color={theme.danger}
+                            />
+                          </Pressable>
                         </ThemedView>
-                      )}
-                      <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
-                        {video.title}
+                      );
+                    })}
+                    <Pressable style={styles.actionLink} onPress={() => completeInsight(insight)}>
+                      <ThemedText type="smallBold" style={{ color: theme.text }}>
+                        Finish
                       </ThemedText>
+                      <Ionicons name="checkmark" size={14} color={theme.text} />
                     </Pressable>
-                  ))}
-                </ThemedView>
-              ) : null}
+                  </ThemedView>
+                ) : (
+                  <>
+                    <ThemedView style={styles.actionsRow}>
+                      <Pressable style={styles.actionLink} onPress={() => handleMarkDone(insight)}>
+                        <Ionicons name="checkmark-circle-outline" size={14} color={theme.success} />
+                        <ThemedText type="small" style={{ color: theme.success, fontWeight: '700' }}>
+                          Done
+                        </ThemedText>
+                      </Pressable>
+                      <Pressable
+                        style={styles.actionLink}
+                        onPress={() => setCorrectingId(correctingId === insight.id ? null : insight.id)}
+                      >
+                        <ThemedText type="linkPrimary" style={{ color: theme.text, fontWeight: '700' }}>
+                          Not quite
+                        </ThemedText>
+                        <Ionicons name="chevron-forward" size={14} color={theme.text} />
+                      </Pressable>
+                      <Pressable style={styles.actionLink} onPress={() => handleDismiss(insight)}>
+                        <Ionicons name="close-outline" size={14} color={theme.textSecondary} />
+                        <ThemedText type="small" themeColor="textSecondary">
+                          Dismiss
+                        </ThemedText>
+                      </Pressable>
+                    </ThemedView>
 
-              <ThemedView style={styles.actionsRow}>
-                <Pressable
-                  style={styles.actionLink}
-                  onPress={() => setCorrectingId(correctingId === insight.id ? null : insight.id)}
-                >
-                  <ThemedText type="linkPrimary" style={{ color: theme.text, fontWeight: '700' }}>
-                    Not quite
-                  </ThemedText>
-                  <Ionicons name="chevron-forward" size={14} color={theme.text} />
-                </Pressable>
-                <Pressable style={styles.actionLink} onPress={() => handleDismiss(insight)}>
-                  <Ionicons name="close-outline" size={14} color={theme.textSecondary} />
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Dismiss
-                  </ThemedText>
-                </Pressable>
-              </ThemedView>
-
-              {correctingId === insight.id ? (
-                <ThemedView style={styles.correctionBox}>
-                  <ThemedText type="smallBold">What was the real issue?</ThemedText>
-                  {ISSUE_OPTIONS.map((opt) => (
-                    <Pressable
-                      key={opt.value}
-                      style={styles.issueOption}
-                      onPress={() => handleCorrect(insight, opt.value)}
-                    >
-                      <Ionicons name="radio-button-off" size={16} color={theme.text} />
-                      <ThemedText>{opt.label}</ThemedText>
-                    </Pressable>
-                  ))}
-                  <ThemedText type="small" themeColor="textSecondary">
-                    This corrects the tip and trains future ones.
-                  </ThemedText>
-                </ThemedView>
-              ) : null}
-            </Card>
-          ))
+                    {correctingId === insight.id ? (
+                      <ThemedView style={styles.correctionBox}>
+                        <ThemedText type="smallBold">What was the real issue?</ThemedText>
+                        {ISSUE_OPTIONS.map((opt) => (
+                          <Pressable
+                            key={opt.value}
+                            style={styles.issueOption}
+                            onPress={() => handleCorrect(insight, opt.value)}
+                          >
+                            <Ionicons name="radio-button-off" size={16} color={theme.text} />
+                            <ThemedText>{opt.label}</ThemedText>
+                          </Pressable>
+                        ))}
+                        <ThemedText type="small" themeColor="textSecondary">
+                          This corrects the tip and trains future ones.
+                        </ThemedText>
+                      </ThemedView>
+                    ) : null}
+                  </>
+                )}
+              </Card>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -209,6 +302,9 @@ const styles = StyleSheet.create({
   actionLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   correctionBox: { marginTop: Spacing.two, gap: Spacing.one },
   issueOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, paddingVertical: Spacing.one },
+  ratingBox: { marginTop: Spacing.two, gap: Spacing.two },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  ratingVideoTitle: { flex: 1 },
   videoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one },
   videoCard: { width: 160, gap: Spacing.half },
   videoThumb: {

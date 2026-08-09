@@ -1,9 +1,15 @@
 export interface DrillVideo {
   id: string;
   title: string;
+  channelId: string;
   channelTitle: string;
   url: string;
   thumbnail: string;
+}
+
+export interface ChannelPreferenceFilter {
+  likedChannelIds: string[];
+  dislikedChannelIds: string[];
 }
 
 const KEYWORDS = [
@@ -37,12 +43,23 @@ export function shortenForSearch(text: string): string {
 // a single "search YouTube" link (not a specific video) if the key isn't
 // configured or the call fails — same resilient pattern as the other AI/API
 // features, never leaves the drill with nothing to click.
-export async function fetchDrillVideos(query: string): Promise<DrillVideo[]> {
+//
+// `preferences` (from past thumbs up/down feedback, see channel-preference.ts)
+// biases results toward creators the player already liked and away from
+// ones they didn't — see api/drill-videos+api.ts for how that's used.
+export async function fetchDrillVideos(
+  query: string,
+  preferences?: ChannelPreferenceFilter
+): Promise<DrillVideo[]> {
   try {
     const res = await fetch('/api/drill-videos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({
+        query,
+        likedChannelIds: preferences?.likedChannelIds ?? [],
+        dislikedChannelIds: preferences?.dislikedChannelIds ?? [],
+      }),
     });
     const data = await res.json();
     if (Array.isArray(data.videos) && data.videos.length > 0) {
@@ -55,6 +72,7 @@ export async function fetchDrillVideos(query: string): Promise<DrillVideo[]> {
     {
       id: 'search',
       title: `Search YouTube for "${query}"`,
+      channelId: '',
       channelTitle: '',
       url: `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} tennis drill`)}`,
       thumbnail: '',

@@ -60,7 +60,7 @@ export interface Match {
   matchNotes: string;
 }
 
-export type InsightStatus = "active" | "dismissed" | "corrected";
+export type InsightStatus = "active" | "dismissed" | "corrected" | "completed";
 export type CorrectedIssue = "stroke" | "footwork" | "shot-selection";
 
 export interface PracticeInsight {
@@ -76,4 +76,15 @@ export interface PracticeInsight {
   sourceMatchIds: string[];
   status: InsightStatus;
   correctedIssue?: CorrectedIssue;
+}
+
+// A player's like/dislike of a specific YouTube creator's drill videos,
+// keyed by channelId (not title — titles can collide, channelId can't).
+// Fed back into future drill-video searches: liked creators get searched
+// again directly, disliked ones get filtered out. See data/drill-videos.ts.
+export interface ChannelPreference {
+  channelId: string;
+  channelTitle: string;
+  liked: boolean;
+  updatedAt: string;
 }
