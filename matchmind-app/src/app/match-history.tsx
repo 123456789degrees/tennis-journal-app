@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
@@ -45,16 +46,29 @@ export default function MatchHistoryScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
-        <TextInput
+        <ThemedText type="smallBold" style={styles.filterLabel}>
+          Filter by opponent
+        </ThemedText>
+        <ThemedView
           style={[
-            styles.filterInput,
-            { borderColor: theme.border, color: theme.text, backgroundColor: theme.backgroundElement },
+            styles.searchRow,
+            { borderColor: theme.border, backgroundColor: theme.backgroundElement },
           ]}
-          placeholder="Filter by opponent..."
-          placeholderTextColor={theme.textSecondary}
-          value={filter}
-          onChangeText={setFilter}
-        />
+        >
+          <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
+          <TextInput
+            style={[styles.filterInput, { color: theme.text }]}
+            placeholder="Type an opponent's name..."
+            placeholderTextColor={theme.textSecondary}
+            value={filter}
+            onChangeText={setFilter}
+          />
+          {filter ? (
+            <Pressable onPress={() => setFilter('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
+            </Pressable>
+          ) : null}
+        </ThemedView>
 
         <FlatList
           data={filtered}
@@ -122,10 +136,17 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.three,
     gap: Spacing.three,
   },
-  filterInput: {
+  filterLabel: { marginBottom: -Spacing.one },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     borderWidth: 1,
     borderRadius: Radius.small,
     paddingHorizontal: Spacing.three,
+  },
+  filterInput: {
+    flex: 1,
     paddingVertical: Spacing.two,
     fontSize: 16,
   },

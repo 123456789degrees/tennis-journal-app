@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, type PressableProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,6 +14,16 @@ import type { CorrectedIssue, PracticeInsight } from '@/data/models';
 import { listInsights, saveInsight } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
+
+// Linking.openURL() on web is just window.open() under the hood, which
+// popup blockers can silently swallow even from a real click. Rendering an
+// actual <a> tag (react-native-web's href/hrefAttrs passthrough on
+// Pressable → View) is real link navigation, never blocked. Native
+// platforms don't understand href, so it's web-only.
+function webLinkProps(url: string): Partial<PressableProps> {
+  if (Platform.OS !== 'web') return {};
+  return { href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } } as Partial<PressableProps>;
+}
 
 const ISSUE_OPTIONS: { value: CorrectedIssue; label: string }[] = [
   { value: 'stroke', label: 'My stroke technique' },
@@ -120,7 +130,7 @@ export default function PracticeScreen() {
                     <Pressable
                       key={video.id}
                       style={styles.videoCard}
-                      onPress={() => Linking.openURL(video.url)}
+                      {...webLinkProps(video.url)}
                     >
                       {video.thumbnail ? (
                         <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
