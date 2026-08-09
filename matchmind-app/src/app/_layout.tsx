@@ -3,7 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { TopNavActions } from '@/components/top-nav-actions';
+import { AppHeader } from '@/components/app-header';
 import { Colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -20,12 +20,10 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
-          headerBackTitle: 'Back',
-          headerStyle: { backgroundColor: theme.primary },
-          headerTintColor: theme.primaryText,
-          headerTitleStyle: { fontWeight: '700' },
           contentStyle: { backgroundColor: theme.background },
-          headerRight: () => <TopNavActions color={theme.primaryText} />,
+          header: ({ options, back }) => (
+            <AppHeader title={options.title} showBack={!!back} />
+          ),
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
