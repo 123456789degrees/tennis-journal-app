@@ -26,27 +26,24 @@ export async function POST(request: Request) {
   }
 
   const searchQuery = `${query} tennis drill tutorial`;
-  const params = new URLSearchParams({
-    part: 'snippet',
-    type: 'video',
-    videoDuration: 'medium', // YouTube's own bucket: ~4-20 minutes
-    maxResults: '2',
-    order: 'relevance',
-    safeSearch: 'strict',
-    q: searchQuery,
-    key: apiKey,
-  });
 
-  try {
+  async function search(withDurationFilter: boolean): Promise<DrillVideo[]> {
+    const params = new URLSearchParams({
+      part: 'snippet',
+      type: 'video',
+      maxResults: '2',
+      order: 'relevance',
+      safeSearch: 'strict',
+      q: searchQuery,
+      key: apiKey!,
+    });
+    if (withDurationFilter) params.set('videoDuration', 'medium'); // YouTube's own bucket: ~4-20 minutes
+
     const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params.toString()}`);
-
-    if (!res.ok) {
-      const detail = await res.text();
-      return Response.json({ videos: [], error: 'upstream_error', detail }, { status: 200 });
-    }
+    if (!res.ok) return [];
 
     const data = await res.json();
-    const videos: DrillVideo[] = (data.items ?? [])
+    return (data.items ?? [])
       .filter((item: any) => item.id?.videoId)
       .map((item: any) => ({
         id: item.id.videoId,
@@ -55,7 +52,16 @@ export async function POST(request: Request) {
         url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
         thumbnail: item.snippet?.thumbnails?.medium?.url ?? item.snippet?.thumbnails?.default?.url ?? '',
       }));
+  }
 
+  try {
+    // The medium-duration filter (~4-20 min) is a nice-to-have, but a
+    // specific drill query can already return zero results on its own —
+    // narrowing further by duration only makes that worse. Try filtered
+    // first for a better-length video, fall back to unfiltered before
+    // giving up and showing a plain search link.
+    let videos = await search(true);
+    if (videos.length === 0) videos = await search(false);
     return Response.json({ videos });
   } catch {
     return Response.json({ videos: [], error: 'network_error' });

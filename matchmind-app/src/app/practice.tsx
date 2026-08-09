@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { fetchDrillVideos, type DrillVideo } from '@/data/drill-videos';
+import { fetchDrillVideos, shortenForSearch, type DrillVideo } from '@/data/drill-videos';
 import { refreshPracticeInsights } from '@/data/insights';
 import type { CorrectedIssue, PracticeInsight } from '@/data/models';
 import { listInsights, saveInsight } from '@/data/storage';
@@ -48,7 +48,8 @@ export default function PracticeScreen() {
     if (fetchedIds.current.has(insight.id)) return;
     fetchedIds.current.add(insight.id);
     setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
-    fetchDrillVideos(insight.suggestedDrill).then((videos) => {
+    const query = insight.drillSearchQuery || shortenForSearch(insight.suggestedDrill);
+    fetchDrillVideos(query).then((videos) => {
       setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
       setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: false }));
     });

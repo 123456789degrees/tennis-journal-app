@@ -68,6 +68,11 @@ export interface PracticeInsight {
   ownerPlayerId: string;
   patternDescription: string;
   suggestedDrill: string;
+  // Short 3-5 word keyword phrase for finding a real video of this drill —
+  // suggestedDrill itself is a full coaching sentence, too long-tail a
+  // YouTube search to reliably match a real video. Optional so insights
+  // saved before this field existed still fall back to suggestedDrill.
+  drillSearchQuery?: string;
   sourceMatchIds: string[];
   status: InsightStatus;
   correctedIssue?: CorrectedIssue;

@@ -15,6 +15,7 @@ interface RequestBody {
 interface PatternResult {
   pattern: string;
   drill: string;
+  searchQuery: string;
 }
 
 function extractJsonArray(text: string): PatternResult[] | null {
@@ -24,10 +25,9 @@ function extractJsonArray(text: string): PatternResult[] | null {
   try {
     const parsed = JSON.parse(text.slice(start, end + 1));
     if (!Array.isArray(parsed)) return null;
-    return parsed.filter(
-      (p): p is PatternResult =>
-        typeof p?.pattern === 'string' && typeof p?.drill === 'string'
-    );
+    return parsed
+      .filter((p): p is PatternResult => typeof p?.pattern === 'string' && typeof p?.drill === 'string')
+      .map((p) => ({ ...p, searchQuery: typeof p.searchQuery === 'string' ? p.searchQuery : p.drill }));
   } catch {
     return null;
   }
@@ -62,9 +62,10 @@ Look across ALL of these (not just the latest one) and identify up to 2 real rec
 For each pattern give:
 1. "pattern" — one short sentence describing the weakness/mistake, written to the player directly (e.g. "Your backhand has broken down under pressure in 3 of your last 4 matches.")
 2. "drill" — one concrete, specific practice drill or focus that directly addresses that weakness
+3. "searchQuery" — a short 3-5 word generic keyword phrase for that same drill, written the way a real YouTube tennis-instruction video would be titled (e.g. "backhand consistency drill" or "second serve topspin drill") — NOT a full sentence, since this gets used as a literal video search query
 
 Respond with ONLY a JSON array, no other text, like:
-[{"pattern": "...", "drill": "..."}]`;
+[{"pattern": "...", "drill": "...", "searchQuery": "..."}]`;
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {

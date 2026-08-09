@@ -17,6 +17,7 @@ interface KeywordRule {
   keyword: RegExp;
   label: string;
   drill: string;
+  searchQuery: string;
 }
 
 const RULES: KeywordRule[] = [
@@ -24,26 +25,31 @@ const RULES: KeywordRule[] = [
     keyword: /backhand/i,
     label: 'backhand',
     drill: 'Cross-court backhand consistency — hit 20 in a row, then work the inside-out forehand to run around it.',
+    searchQuery: 'backhand consistency drill',
   },
   {
     keyword: /forehand/i,
     label: 'forehand',
     drill: 'Forehand depth and consistency drill — 20 balls cross-court, then 20 down the line.',
+    searchQuery: 'forehand consistency drill',
   },
   {
     keyword: /serve/i,
     label: 'serve',
     drill: 'Second-serve spin and placement — 20 serves at 75% pace, aiming for the corners.',
+    searchQuery: 'second serve spin drill',
   },
   {
     keyword: /footwork|movement/i,
     label: 'footwork',
     drill: 'Split-step and recovery footwork ladder drills before hitting live points.',
+    searchQuery: 'tennis footwork ladder drill',
   },
   {
     keyword: /volley|net/i,
     label: 'net game',
     drill: 'Volley punch drill at the net, focusing on a short, compact swing.',
+    searchQuery: 'tennis volley drill',
   },
 ];
 
@@ -70,6 +76,7 @@ async function runHeuristic(playerId: string, recent: Match[]): Promise<void> {
       ownerPlayerId: playerId,
       patternDescription: describeHeuristic(rule.label, matching.length, recent.length),
       suggestedDrill: rule.drill,
+      drillSearchQuery: rule.searchQuery,
       sourceMatchIds: matching.map((m) => m.id),
       status: 'active',
     };
@@ -82,6 +89,7 @@ async function runHeuristic(playerId: string, recent: Match[]): Promise<void> {
 interface AiPattern {
   pattern: string;
   drill: string;
+  searchQuery: string;
 }
 
 async function fetchAiPatterns(recent: Match[]): Promise<AiPattern[] | null> {
@@ -133,6 +141,7 @@ export async function refreshPracticeInsights(playerId: string): Promise<void> {
           ownerPlayerId: playerId,
           patternDescription: p.pattern,
           suggestedDrill: p.drill,
+          drillSearchQuery: p.searchQuery,
           sourceMatchIds: recent.map((m) => m.id),
           status: 'active',
         })
