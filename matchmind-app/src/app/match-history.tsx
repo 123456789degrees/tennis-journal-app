@@ -126,7 +126,7 @@ export default function MatchHistoryScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
         <ThemedText type="smallBold" style={styles.filterLabel}>
-          Filter by opponent
+          Search for opponent
         </ThemedText>
         <ThemedView
           style={[
@@ -149,6 +149,9 @@ export default function MatchHistoryScreen() {
           ) : null}
         </ThemedView>
 
+        <ThemedText type="smallBold" style={styles.filterLabel}>
+          Filter
+        </ThemedText>
         <ThemedView style={styles.filterGroupsRow}>
           <FilterGroup
             label="Result"
