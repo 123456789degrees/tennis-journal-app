@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { ChannelPreference, Match, Opponent, Player, PracticeInsight } from "./models";
+import type { Match, Opponent, Player, PracticeInsight, VideoFeedback } from "./models";
 
 // Private/personal data model — everything is namespaced under the current
 // player's id, and there is no cross-player read path anywhere in this file.
@@ -11,7 +11,7 @@ const KEYS = {
   matches: (playerId: string) => `matchmind:matches:${playerId}`,
   insights: (playerId: string) => `matchmind:insights:${playerId}`,
   lastAnalyzedMatchId: (playerId: string) => `matchmind:lastAnalyzedMatchId:${playerId}`,
-  channelPreferences: (playerId: string) => `matchmind:channelPreferences:${playerId}`,
+  videoFeedback: (playerId: string) => `matchmind:videoFeedback:${playerId}`,
 };
 
 function newId(): string {
@@ -68,7 +68,7 @@ export async function deletePlayer(playerId: string): Promise<void> {
     AsyncStorage.removeItem(KEYS.opponents(playerId)),
     AsyncStorage.removeItem(KEYS.matches(playerId)),
     AsyncStorage.removeItem(KEYS.insights(playerId)),
-    AsyncStorage.removeItem(KEYS.channelPreferences(playerId)),
+    AsyncStorage.removeItem(KEYS.videoFeedback(playerId)),
   ]);
   const ids = await getAllPlayerIds();
   await writeJson(
@@ -227,19 +227,29 @@ export async function saveInsight(
   await writeJson(KEYS.insights(playerId), all);
 }
 
-// --- Channel preferences (drill video like/dislike) ---
+// --- Video feedback (per-video drill-video like/dislike) ---
 
-export async function listChannelPreferences(playerId: string): Promise<ChannelPreference[]> {
-  return readJson<ChannelPreference[]>(KEYS.channelPreferences(playerId), []);
+export async function listVideoFeedback(playerId: string): Promise<VideoFeedback[]> {
+  return readJson<VideoFeedback[]>(KEYS.videoFeedback(playerId), []);
 }
 
-export async function saveChannelPreference(
+export async function saveVideoFeedback(
   playerId: string,
-  preference: ChannelPreference
+  feedback: VideoFeedback
 ): Promise<void> {
-  const all = await listChannelPreferences(playerId);
-  const idx = all.findIndex((p) => p.channelId === preference.channelId);
-  if (idx >= 0) all[idx] = preference;
-  else all.push(preference);
-  await writeJson(KEYS.channelPreferences(playerId), all);
+  const all = await listVideoFeedback(playerId);
+  const idx = all.findIndex((f) => f.videoId === feedback.videoId);
+  if (idx >= 0) all[idx] = feedback;
+  else all.push(feedback);
+  await writeJson(KEYS.videoFeedback(playerId), all);
+}
+
+// Used by the Liked Videos screen's "remove" action — goes back to neutral
+// rather than flipping to disliked.
+export async function deleteVideoFeedback(playerId: string, videoId: string): Promise<void> {
+  const all = await listVideoFeedback(playerId);
+  await writeJson(
+    KEYS.videoFeedback(playerId),
+    all.filter((f) => f.videoId !== videoId)
+  );
 }

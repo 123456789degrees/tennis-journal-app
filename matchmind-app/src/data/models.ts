@@ -78,11 +78,18 @@ export interface PracticeInsight {
   correctedIssue?: CorrectedIssue;
 }
 
-// A player's like/dislike of a specific YouTube creator's drill videos,
-// keyed by channelId (not title — titles can collide, channelId can't).
-// Fed back into future drill-video searches: liked creators get searched
-// again directly, disliked ones get filtered out. See data/drill-videos.ts.
-export interface ChannelPreference {
+// A player's like/dislike of one specific YouTube video (not its creator —
+// liking is a per-video fact: you might like one video from a channel and
+// not another). Keyed by videoId. Two things read this list:
+// - The Liked Videos screen shows every entry where liked === true.
+// - Future drill-video searches derive a per-channel bias from it (a
+//   channel with a liked video gets searched again directly; one with a
+//   disliked video gets filtered out) — see data/drill-videos.ts.
+export interface VideoFeedback {
+  videoId: string;
+  title: string;
+  url: string;
+  thumbnail: string;
   channelId: string;
   channelTitle: string;
   liked: boolean;

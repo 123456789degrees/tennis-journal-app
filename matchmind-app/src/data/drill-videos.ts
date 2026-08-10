@@ -7,7 +7,7 @@ export interface DrillVideo {
   thumbnail: string;
 }
 
-export interface ChannelPreferenceFilter {
+export interface ChannelBias {
   likedChannelIds: string[];
   dislikedChannelIds: string[];
 }
@@ -44,12 +44,13 @@ export function shortenForSearch(text: string): string {
 // configured or the call fails — same resilient pattern as the other AI/API
 // features, never leaves the drill with nothing to click.
 //
-// `preferences` (from past thumbs up/down feedback, see channel-preference.ts)
+// `bias` is derived from the player's past per-video thumbs up/down feedback
+// (models.ts's VideoFeedback, see practice.tsx's channelBiasFrom) — it
 // biases results toward creators the player already liked and away from
-// ones they didn't — see api/drill-videos+api.ts for how that's used.
+// ones they didn't. See api/drill-videos+api.ts for how that's used.
 export async function fetchDrillVideos(
   query: string,
-  preferences?: ChannelPreferenceFilter
+  bias?: ChannelBias
 ): Promise<DrillVideo[]> {
   try {
     const res = await fetch('/api/drill-videos', {
@@ -57,8 +58,8 @@ export async function fetchDrillVideos(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query,
-        likedChannelIds: preferences?.likedChannelIds ?? [],
-        dislikedChannelIds: preferences?.dislikedChannelIds ?? [],
+        likedChannelIds: bias?.likedChannelIds ?? [],
+        dislikedChannelIds: bias?.dislikedChannelIds ?? [],
       }),
     });
     const data = await res.json();

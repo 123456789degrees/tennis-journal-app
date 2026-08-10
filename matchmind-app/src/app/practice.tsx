@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, type PressableProps } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -10,25 +10,11 @@ import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { fetchDrillVideos, shortenForSearch, type DrillVideo } from '@/data/drill-videos';
 import { refreshPracticeInsights } from '@/data/insights';
-import type { ChannelPreference, CorrectedIssue, PracticeInsight } from '@/data/models';
-import {
-  listChannelPreferences,
-  listInsights,
-  saveChannelPreference,
-  saveInsight,
-} from '@/data/storage';
+import type { CorrectedIssue, PracticeInsight, VideoFeedback } from '@/data/models';
+import { listInsights, listVideoFeedback, saveInsight, saveVideoFeedback } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
-
-// Linking.openURL() on web is just window.open() under the hood, which
-// popup blockers can silently swallow even from a real click. Rendering an
-// actual <a> tag (react-native-web's href/hrefAttrs passthrough on
-// Pressable → View) is real link navigation, never blocked. Native
-// platforms don't understand href, so it's web-only.
-function webLinkProps(url: string): Partial<PressableProps> {
-  if (Platform.OS !== 'web') return {};
-  return { href: url, hrefAttrs: { target: '_blank', rel: 'noopener noreferrer' } } as Partial<PressableProps>;
-}
+import { webLinkProps } from '@/utils/web-link-props';
 
 const ISSUE_OPTIONS: { value: CorrectedIssue; label: string }[] = [
   { value: 'stroke', label: 'My stroke technique' },
@@ -36,30 +22,40 @@ const ISSUE_OPTIONS: { value: CorrectedIssue; label: string }[] = [
   { value: 'shot-selection', label: 'Shot selection' },
 ];
 
+// Liking/disliking is a per-video fact (you might like one video from a
+// channel and not another) — but future searches still benefit from a
+// per-channel signal ("keep giving the same person"). Derive that signal
+// from the per-video feedback instead of tracking it separately, so there's
+// one source of truth. See data/models.ts's VideoFeedback doc comment.
+function channelBiasFrom(feedback: VideoFeedback[]) {
+  return {
+    likedChannelIds: feedback.filter((f) => f.liked).map((f) => f.channelId),
+    dislikedChannelIds: feedback.filter((f) => !f.liked).map((f) => f.channelId),
+  };
+}
+
 export default function PracticeScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const playerId = useCurrentPlayerId();
   const [insights, setInsights] = useState<PracticeInsight[]>([]);
   const [correctingId, setCorrectingId] = useState<string | null>(null);
   const [ratingId, setRatingId] = useState<string | null>(null);
   const [videosByInsight, setVideosByInsight] = useState<Record<string, DrillVideo[]>>({});
   const [loadingVideoIds, setLoadingVideoIds] = useState<Record<string, boolean>>({});
-  const [channelPrefs, setChannelPrefs] = useState<ChannelPreference[]>([]);
+  const [videoFeedback, setVideoFeedback] = useState<VideoFeedback[]>([]);
   // A ref (not state) so the "already fetched?" check stays correct even
   // when called from a useFocusEffect callback holding a stale closure —
   // refs are a stable mutable box every closure reads the same live value
   // from, unlike state captured at closure-creation time.
   const fetchedIds = useRef(new Set<string>());
 
-  function loadVideosFor(insight: PracticeInsight, prefs: ChannelPreference[]) {
+  function loadVideosFor(insight: PracticeInsight, feedback: VideoFeedback[]) {
     if (fetchedIds.current.has(insight.id)) return;
     fetchedIds.current.add(insight.id);
     setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
     const query = insight.drillSearchQuery || shortenForSearch(insight.suggestedDrill);
-    fetchDrillVideos(query, {
-      likedChannelIds: prefs.filter((p) => p.liked).map((p) => p.channelId),
-      dislikedChannelIds: prefs.filter((p) => !p.liked).map((p) => p.channelId),
-    }).then((videos) => {
+    fetchDrillVideos(query, channelBiasFrom(feedback)).then((videos) => {
       setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
       setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: false }));
     });
@@ -71,9 +67,9 @@ export default function PracticeScreen() {
     const all = await listInsights(playerId);
     const active = all.filter((i) => i.status === 'active');
     setInsights(active);
-    const prefs = await listChannelPreferences(playerId);
-    setChannelPrefs(prefs);
-    active.forEach((insight) => loadVideosFor(insight, prefs));
+    const feedback = await listVideoFeedback(playerId);
+    setVideoFeedback(feedback);
+    active.forEach((insight) => loadVideosFor(insight, feedback));
   }
 
   useFocusEffect(
@@ -113,23 +109,27 @@ export default function PracticeScreen() {
     }
   }
 
-  async function rateChannel(video: DrillVideo, liked: boolean) {
+  async function rateVideo(video: DrillVideo, liked: boolean) {
     if (!playerId || !video.channelId) return;
-    const preference: ChannelPreference = {
+    const feedback: VideoFeedback = {
+      videoId: video.id,
+      title: video.title,
+      url: video.url,
+      thumbnail: video.thumbnail,
       channelId: video.channelId,
       channelTitle: video.channelTitle,
       liked,
       updatedAt: new Date().toISOString(),
     };
-    await saveChannelPreference(playerId, preference);
-    setChannelPrefs((prev) => {
-      const idx = prev.findIndex((p) => p.channelId === preference.channelId);
+    await saveVideoFeedback(playerId, feedback);
+    setVideoFeedback((prev) => {
+      const idx = prev.findIndex((f) => f.videoId === feedback.videoId);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = preference;
+        next[idx] = feedback;
         return next;
       }
-      return [...prev, preference];
+      return [...prev, feedback];
     });
   }
 
@@ -137,8 +137,16 @@ export default function PracticeScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
         <ThemedView style={styles.titleRow}>
-          <Ionicons name="sparkles" size={22} color={theme.primary} />
-          <ThemedText type="title">Practice / Insights</ThemedText>
+          <ThemedView style={styles.titleLeft}>
+            <Ionicons name="sparkles" size={22} color={theme.primary} />
+            <ThemedText type="title">Practice / Insights</ThemedText>
+          </ThemedView>
+          <Pressable style={styles.actionLink} onPress={() => router.push('/liked-videos')}>
+            <Ionicons name="heart" size={16} color={theme.danger} />
+            <ThemedText type="small" style={{ color: theme.danger, fontWeight: '700' }}>
+              Liked videos
+            </ThemedText>
+          </Pressable>
         </ThemedView>
         <ThemedText type="small" themeColor="textSecondary">
           Surfaces on its own from your recent matches — you don&apos;t go looking for it.
@@ -200,22 +208,22 @@ export default function PracticeScreen() {
                   <ThemedView style={styles.ratingBox}>
                     <ThemedText type="smallBold">Rate these so we can find more like them</ThemedText>
                     {ratableVideos.map((video) => {
-                      const pref = channelPrefs.find((p) => p.channelId === video.channelId);
+                      const feedback = videoFeedback.find((f) => f.videoId === video.id);
                       return (
                         <ThemedView key={video.id} style={styles.ratingRow}>
                           <ThemedText type="small" numberOfLines={1} style={styles.ratingVideoTitle}>
                             {video.channelTitle}
                           </ThemedText>
-                          <Pressable onPress={() => rateChannel(video, true)} hitSlop={8}>
+                          <Pressable onPress={() => rateVideo(video, true)} hitSlop={8}>
                             <Ionicons
-                              name={pref?.liked === true ? 'thumbs-up' : 'thumbs-up-outline'}
+                              name={feedback?.liked === true ? 'thumbs-up' : 'thumbs-up-outline'}
                               size={18}
                               color={theme.success}
                             />
                           </Pressable>
-                          <Pressable onPress={() => rateChannel(video, false)} hitSlop={8}>
+                          <Pressable onPress={() => rateVideo(video, false)} hitSlop={8}>
                             <Ionicons
-                              name={pref?.liked === false ? 'thumbs-down' : 'thumbs-down-outline'}
+                              name={feedback?.liked === false ? 'thumbs-down' : 'thumbs-down-outline'}
                               size={18}
                               color={theme.danger}
                             />
@@ -295,7 +303,14 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingBottom: Spacing.six,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+    flexWrap: 'wrap',
+  },
+  titleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   patternText: { flex: 1 },
   actionsRow: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two, flexWrap: 'wrap' },

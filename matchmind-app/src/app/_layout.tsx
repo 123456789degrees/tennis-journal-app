@@ -44,6 +44,7 @@ export default function RootLayout() {
         <Stack.Screen name="match-history" options={{ title: 'Match History' }} />
         <Stack.Screen name="match/[id]" options={{ title: 'Match Detail' }} />
         <Stack.Screen name="practice" options={{ title: 'Practice' }} />
+        <Stack.Screen name="liked-videos" options={{ title: 'Liked Videos' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>
     </ThemeProvider>
