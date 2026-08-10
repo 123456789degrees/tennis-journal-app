@@ -155,6 +155,10 @@ export default function LoginScreen() {
             </>
           )}
         </Card>
+
+        <ThemedText type="small" style={styles.copyright}>
+          © 2026 MatchMind
+        </ThemedText>
       </ThemedView>
       </ScrollView>
     </SafeAreaView>
@@ -184,6 +188,7 @@ const styles = StyleSheet.create({
   },
   wordmarkAccent: { color: '#C6E600' },
   tagline: { textAlign: 'center', marginBottom: Spacing.four, opacity: 0.9 },
+  copyright: { textAlign: 'center', marginTop: Spacing.four, color: 'rgba(255,255,255,0.6)' },
   card: {
     borderRadius: Radius.large,
   },
