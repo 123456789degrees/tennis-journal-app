@@ -89,7 +89,7 @@ export default function LoginScreen() {
       >
       <ThemedView style={[styles.container, { backgroundColor: theme.primary }]}>
         <ThemedView style={styles.logoWrap}>
-          <Logo size={92} showWordmark={false} />
+          <Logo size={120} />
         </ThemedView>
         <ThemedText type="title" style={[styles.title, { color: theme.primaryText }]}>
           MatchMind
