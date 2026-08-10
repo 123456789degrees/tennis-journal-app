@@ -151,7 +151,7 @@ export default function MatchDetailScreen() {
             </ThemedView>
             <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
               Scouting feeds the AI summary on {opponent?.name ?? 'the opponent'}&apos;s profile;
-              your reflection feeds Practice/Insights.
+              your reflection feeds Practice.
             </ThemedText>
           </ThemedView>
         ) : null}

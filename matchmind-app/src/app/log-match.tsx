@@ -189,7 +189,7 @@ export default function LogMatchScreen() {
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {isEditing
-            ? "Update anything below — scouting and reflection feed back into the opponent's profile and Practice/Insights the same as when you first logged it."
+            ? "Update anything below — scouting and reflection feed back into the opponent's profile and Practice the same as when you first logged it."
             : 'Scouting + reflection are right here, not hidden — every box is type or dictate.'}
         </ThemedText>
 

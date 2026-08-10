@@ -59,18 +59,32 @@ function describeHeuristic(label: string, matchingCount: number, recentCount: nu
   return `Your ${label} got flagged in ${matchingCount} of your last ${recentCount} matches.`;
 }
 
-async function runHeuristic(playerId: string, recent: Match[]): Promise<void> {
+async function runHeuristic(
+  playerId: string,
+  recent: Match[],
+  // A passive refresh (a new match came in) only skips a label that's
+  // currently active — the same weakness showing up again in fresh match
+  // data is genuinely new evidence. A forced manual refresh (no new match,
+  // just asking for more) has no new evidence, so re-surfacing a label
+  // already shown at ANY point (dismissed or not) would just be a literal
+  // repeat — skip those too.
+  excludeAnyPastLabel = false
+): Promise<boolean> {
   const existing = await listInsights(playerId);
+  let addedAny = false;
 
   for (const rule of RULES) {
     const matching = recent.filter((m) => rule.keyword.test(m.selfReflection.whatToImprove));
     if (matching.length === 0) continue;
 
-    const alreadyActive = existing.some(
-      (i) => i.status === 'active' && i.patternDescription.toLowerCase().includes(rule.label)
+    const alreadyShown = existing.some(
+      (i) =>
+        (excludeAnyPastLabel || i.status === 'active') &&
+        i.patternDescription.toLowerCase().includes(rule.label)
     );
-    if (alreadyActive) continue;
+    if (alreadyShown) continue;
 
+    addedAny = true;
     const insight: PracticeInsight = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       ownerPlayerId: playerId,
@@ -82,6 +96,8 @@ async function runHeuristic(playerId: string, recent: Match[]): Promise<void> {
     };
     await saveInsight(playerId, insight);
   }
+
+  return addedAny;
 }
 
 // --- Real AI path ---
@@ -92,7 +108,10 @@ interface AiPattern {
   searchQuery: string;
 }
 
-async function fetchAiPatterns(recent: Match[]): Promise<AiPattern[] | null> {
+async function fetchAiPatterns(
+  recent: Match[],
+  excludePatterns: string[]
+): Promise<AiPattern[] | null> {
   try {
     const res = await fetch('/api/practice-tips', {
       method: 'POST',
@@ -104,6 +123,7 @@ async function fetchAiPatterns(recent: Match[]): Promise<AiPattern[] | null> {
           whatWentWell: m.selfReflection.whatWentWell,
           whatToImprove: m.selfReflection.whatToImprove,
         })),
+        excludePatterns,
       }),
     });
     const data = await res.json();
@@ -114,17 +134,13 @@ async function fetchAiPatterns(recent: Match[]): Promise<AiPattern[] | null> {
   }
 }
 
-export async function refreshPracticeInsights(playerId: string): Promise<void> {
-  const recent = (await listMatches(playerId)).slice(0, LOOKBACK); // already most-recent-first
-  if (recent.length === 0) return;
-
-  // Skip re-analysis if nothing new has been logged since last time — avoids
-  // firing an API call on every screen focus.
-  const latestId = recent[0].id;
-  const lastAnalyzed = await getLastAnalyzedMatchId(playerId);
-  if (lastAnalyzed === latestId) return;
-
-  const aiPatterns = await fetchAiPatterns(recent);
+async function runAnalysis(
+  playerId: string,
+  recent: Match[],
+  excludePatterns: string[],
+  excludeAnyPastLabel: boolean
+): Promise<boolean> {
+  const aiPatterns = await fetchAiPatterns(recent, excludePatterns);
 
   if (aiPatterns && aiPatterns.length > 0) {
     // Fresh AI analysis supersedes the previous active nudges.
@@ -147,9 +163,39 @@ export async function refreshPracticeInsights(playerId: string): Promise<void> {
         })
       )
     );
-  } else {
-    await runHeuristic(playerId, recent);
+    return true;
   }
 
+  return runHeuristic(playerId, recent, excludeAnyPastLabel);
+}
+
+// The passive path — called on every Practice/Home focus. Only re-analyzes
+// once a new match has actually been logged, so it's not firing an AI call
+// on every screen visit.
+export async function refreshPracticeInsights(playerId: string): Promise<void> {
+  const recent = (await listMatches(playerId)).slice(0, LOOKBACK); // already most-recent-first
+  if (recent.length === 0) return;
+
+  const latestId = recent[0].id;
+  const lastAnalyzed = await getLastAnalyzedMatchId(playerId);
+  if (lastAnalyzed === latestId) return;
+
+  await runAnalysis(playerId, recent, [], false);
   await setLastAnalyzedMatchId(playerId, latestId);
+}
+
+// The manual "Get more drills" path — no new match is required. Since the
+// input match data hasn't changed, re-running analysis would otherwise just
+// hand back the same pattern already shown; explicitly excludes every
+// pattern ever surfaced (any status) so it only returns something genuinely
+// different, or nothing if there really isn't anything else to say.
+// Returns whether a new insight was actually found.
+export async function forceRefreshPracticeInsights(playerId: string): Promise<boolean> {
+  const recent = (await listMatches(playerId)).slice(0, LOOKBACK);
+  if (recent.length === 0) return false;
+
+  const allPast = await listInsights(playerId);
+  const excludePatterns = allPast.map((i) => i.patternDescription);
+
+  return runAnalysis(playerId, recent, excludePatterns, true);
 }

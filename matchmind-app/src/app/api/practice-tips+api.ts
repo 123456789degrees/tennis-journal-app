@@ -10,6 +10,7 @@ interface ReflectionMatch {
 
 interface RequestBody {
   matches: ReflectionMatch[]; // most recent first
+  excludePatterns?: string[]; // patterns already shown — asked to avoid repeating these
 }
 
 interface PatternResult {
@@ -34,7 +35,7 @@ function extractJsonArray(text: string): PatternResult[] | null {
 }
 
 export async function POST(request: Request) {
-  const { matches } = (await request.json()) as RequestBody;
+  const { matches, excludePatterns = [] } = (await request.json()) as RequestBody;
 
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -53,11 +54,15 @@ export async function POST(request: Request) {
     )
     .join('\n');
 
+  const excludeText = excludePatterns.length
+    ? `\n\nThe player has ALREADY been shown these patterns:\n${excludePatterns.map((p) => `- ${p}`).join('\n')}\nDo not return any of them again in any form — reusing the same underlying weakness with different wording still counts as a repeat and is NOT allowed. If the only real pattern the notes support is one already listed above, you MUST return an empty array rather than reword it. Only return a pattern here if it is about a genuinely different aspect of their game.`
+    : '';
+
   const prompt = `You are a tennis practice-planning assistant for a junior competitive player. Here are their own self-reflection notes from their most recent matches, most recent first:
 
 ${matchesText}
 
-Look across ALL of these (not just the latest one) and identify up to 2 real recurring WEAKNESSES OR MISTAKES — things that are genuinely costing them points and need work. Use the "went well" notes only as context (e.g. to notice something that used to be a strength is slipping) — never surface something that's already going well as a pattern to fix. Only surface a pattern if it's genuinely supported by the "to improve" notes appearing more than once — don't invent anything, and don't pad the list with a strength just to reach 2 items; it's fine to return just 1, or an empty array, if that's all the notes support.
+Look across ALL of these (not just the latest one) and identify up to 2 real recurring WEAKNESSES OR MISTAKES — things that are genuinely costing them points and need work. Use the "went well" notes only as context (e.g. to notice something that used to be a strength is slipping) — never surface something that's already going well as a pattern to fix. Only surface a pattern if it's genuinely supported by the "to improve" notes appearing more than once — don't invent anything, and don't pad the list with a strength just to reach 2 items; it's fine to return just 1, or an empty array, if that's all the notes support.${excludeText}
 
 For each pattern give:
 1. "pattern" — one short sentence describing the weakness/mistake, written to the player directly (e.g. "Your backhand has broken down under pressure in 3 of your last 4 matches.")

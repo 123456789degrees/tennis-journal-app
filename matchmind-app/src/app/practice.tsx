@@ -9,7 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { fetchDrillVideos, shortenForSearch, type DrillVideo } from '@/data/drill-videos';
-import { refreshPracticeInsights } from '@/data/insights';
+import { forceRefreshPracticeInsights, refreshPracticeInsights } from '@/data/insights';
 import type { CorrectedIssue, PracticeInsight, VideoFeedback } from '@/data/models';
 import { listInsights, listVideoFeedback, saveInsight, saveVideoFeedback } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
@@ -44,6 +44,8 @@ export default function PracticeScreen() {
   const [videosByInsight, setVideosByInsight] = useState<Record<string, DrillVideo[]>>({});
   const [loadingVideoIds, setLoadingVideoIds] = useState<Record<string, boolean>>({});
   const [videoFeedback, setVideoFeedback] = useState<VideoFeedback[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   // A ref (not state) so the "already fetched?" check stays correct even
   // when called from a useFocusEffect callback holding a stale closure —
   // refs are a stable mutable box every closure reads the same live value
@@ -78,6 +80,20 @@ export default function PracticeScreen() {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [playerId])
   );
+
+  async function handleRefresh() {
+    if (!playerId || refreshing) return;
+    setRefreshing(true);
+    setRefreshMessage(null);
+    const foundSomething = await forceRefreshPracticeInsights(playerId);
+    await load();
+    setRefreshing(false);
+    setRefreshMessage(
+      foundSomething
+        ? null
+        : "No new patterns right now — you've covered everything your recent matches show. Log a new match for fresh ones."
+    );
+  }
 
   async function handleCorrect(insight: PracticeInsight, issue: CorrectedIssue) {
     if (!playerId) return;
@@ -139,25 +155,47 @@ export default function PracticeScreen() {
         <ThemedView style={styles.titleRow}>
           <ThemedView style={styles.titleLeft}>
             <Ionicons name="sparkles" size={22} color={theme.primary} />
-            <ThemedText type="title">Practice / Insights</ThemedText>
+            <ThemedText type="title">Practice</ThemedText>
           </ThemedView>
-          <Pressable style={styles.actionLink} onPress={() => router.push('/liked-videos')}>
-            <Ionicons name="heart" size={16} color={theme.danger} />
-            <ThemedText type="small" style={{ color: theme.danger, fontWeight: '700' }}>
-              Liked videos
-            </ThemedText>
-          </Pressable>
+          <ThemedView style={styles.titleActions}>
+            <Pressable style={styles.actionLink} onPress={handleRefresh} disabled={refreshing}>
+              <Ionicons name="refresh" size={16} color={theme.primary} />
+              <ThemedText
+                type="small"
+                style={{ color: theme.primary, fontWeight: '700', opacity: refreshing ? 0.6 : 1 }}
+              >
+                {refreshing ? 'Finding drills...' : 'Get more drills'}
+              </ThemedText>
+            </Pressable>
+            <Pressable style={styles.actionLink} onPress={() => router.push('/liked-videos')}>
+              <Ionicons name="heart" size={16} color={theme.danger} />
+              <ThemedText type="small" style={{ color: theme.danger, fontWeight: '700' }}>
+                Liked videos
+              </ThemedText>
+            </Pressable>
+          </ThemedView>
         </ThemedView>
         <ThemedText type="small" themeColor="textSecondary">
-          Surfaces on its own from your recent matches — you don&apos;t go looking for it.
+          Surfaces on its own from your recent matches — or tap &quot;Get more drills&quot; above
+          any time.
         </ThemedText>
+
+        {refreshMessage ? (
+          <ThemedView style={styles.refreshMessageRow}>
+            <Ionicons name="information-circle-outline" size={16} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.patternText}>
+              {refreshMessage}
+            </ThemedText>
+          </ThemedView>
+        ) : null}
 
         {insights.length === 0 ? (
           <Card>
             <ThemedText type="smallBold">Not enough data yet</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Log a few more matches with the &quot;what to improve&quot; box filled in, and a
-              pattern will show up here automatically.
+              Log a few matches with the &quot;what to improve&quot; box filled in, then tap
+              &quot;Get more drills&quot; above — or it&apos;ll show up here automatically next
+              time you log one.
             </ThemedText>
           </Card>
         ) : (
@@ -311,6 +349,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   titleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  titleActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four, flexWrap: 'wrap' },
+  refreshMessageRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   patternText: { flex: 1 },
   actionsRow: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two, flexWrap: 'wrap' },
