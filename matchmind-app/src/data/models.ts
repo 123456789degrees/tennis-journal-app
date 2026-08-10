@@ -14,8 +14,6 @@ export interface Player {
   id: string;
   email: string;
   password: string;
-  isUnder13: boolean;
-  parentEmail?: string;
   settings: {
     practiceNudgesEnabled: boolean;
     logReminderEnabled: boolean;

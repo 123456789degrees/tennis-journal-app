@@ -20,11 +20,9 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [parentEmail, setParentEmail] = useState('');
   const [error, setError] = useState('');
 
   const passwordRef = useRef<TextInput>(null);
-  const parentEmailRef = useRef<TextInput>(null);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -65,12 +63,7 @@ export default function LoginScreen() {
       setError('An account with that email already exists. Sign in instead.');
       return;
     }
-    await createPlayer({
-      email,
-      password,
-      isUnder13: parentEmail.trim().length > 0,
-      parentEmail: parentEmail.trim() || undefined,
-    });
+    await createPlayer({ email, password });
     router.replace('/home');
   }
 
@@ -123,31 +116,9 @@ export default function LoginScreen() {
             secureTextEntry
             value={password}
             onChangeText={setPassword}
-            returnKeyType={mode === 'signup' ? 'next' : 'go'}
-            onSubmitEditing={() =>
-              mode === 'signup' ? parentEmailRef.current?.focus() : handleSignIn()
-            }
+            returnKeyType="go"
+            onSubmitEditing={() => (mode === 'signup' ? handleCreateAccount() : handleSignIn())}
           />
-
-          {mode === 'signup' ? (
-            <>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-                Under 13? We&apos;ll ask for a parent&apos;s email.
-              </ThemedText>
-              <TextInput
-                ref={parentEmailRef}
-                style={[styles.input, inputStyle]}
-                placeholder="Parent email (if under 13)"
-                placeholderTextColor={theme.textSecondary}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={parentEmail}
-                onChangeText={setParentEmail}
-                returnKeyType="go"
-                onSubmitEditing={handleCreateAccount}
-              />
-            </>
-          ) : null}
 
           {error ? (
             <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText>

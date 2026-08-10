@@ -95,15 +95,11 @@ export async function findPlayerByEmail(email: string): Promise<Player | null> {
 export async function createPlayer(input: {
   email: string;
   password: string;
-  isUnder13: boolean;
-  parentEmail?: string;
 }): Promise<Player> {
   const player: Player = {
     id: newId(),
     email: input.email,
     password: input.password,
-    isUnder13: input.isUnder13,
-    parentEmail: input.parentEmail,
     settings: { practiceNudgesEnabled: true, logReminderEnabled: true },
   };
   await savePlayer(player);

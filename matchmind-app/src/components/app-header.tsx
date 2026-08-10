@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { usePathname, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,18 +18,16 @@ import { useTheme } from '@/hooks/use-theme';
 export function AppHeader({ title, showBack }: { title?: string; showBack: boolean }) {
   const theme = useTheme();
   const router = useRouter();
-  const pathname = usePathname();
-  const isHome = pathname === '/home';
 
   return (
     <SafeAreaView edges={['top']} style={{ backgroundColor: theme.primary }}>
       <View style={styles.row}>
         <View style={styles.left}>
-          {/* Opponents/All matches/Settings are top-level destinations reached
-              straight from the nav bar, not pushed on top of Home — there's
-              no "previous screen" for a back chevron to return to. This logo
-              is the actual way back to Home from any of them. */}
-          {!isHome ? <HomeLogoLink /> : null}
+          {/* Always shown, even on Home — it's the brand mark first, and on
+              every other screen (Opponents/All matches/Settings) it's also
+              the actual way back to Home, since those are reached straight
+              from the nav bar rather than pushed on top of it. */}
+          <HomeLogoLink />
           {showBack ? (
             <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
               <Ionicons name="chevron-back" size={22} color={theme.primaryText} />

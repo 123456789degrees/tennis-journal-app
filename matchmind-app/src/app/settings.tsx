@@ -100,11 +100,6 @@ export default function SettingsScreen() {
         <Card>
           <ThemedText type="smallBold">Account</ThemedText>
           <ThemedText>{player.email}</ThemedText>
-          {player.isUnder13 ? (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-              Parent on account: {player.parentEmail}
-            </ThemedText>
-          ) : null}
         </Card>
 
         <Card>
