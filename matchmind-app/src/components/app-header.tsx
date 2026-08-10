@@ -29,7 +29,7 @@ export function AppHeader({ title, showBack }: { title?: string; showBack: boole
               straight from the nav bar, not pushed on top of Home — there's
               no "previous screen" for a back chevron to return to. This logo
               is the actual way back to Home from any of them. */}
-          {!isHome ? <HomeLogoLink color={theme.primaryText} /> : null}
+          {!isHome ? <HomeLogoLink /> : null}
           {showBack ? (
             <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
               <Ionicons name="chevron-back" size={22} color={theme.primaryText} />
@@ -43,7 +43,7 @@ export function AppHeader({ title, showBack }: { title?: string; showBack: boole
   );
 }
 
-function HomeLogoLink({ color }: { color: string }) {
+function HomeLogoLink() {
   const router = useRouter();
   const [scale] = useState(() => new Animated.Value(1));
 
@@ -66,7 +66,7 @@ function HomeLogoLink({ color }: { color: string }) {
       {...hoverProps}
     >
       <Animated.View style={{ transform: [{ scale }] }}>
-        <Logo size={26} color={color} />
+        <Logo size={26} />
       </Animated.View>
     </Pressable>
   );

@@ -51,12 +51,7 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
         <ThemedView style={styles.header}>
-          <ThemedView style={styles.brandRow}>
-            <Logo size={36} color={theme.primary} />
-            <ThemedText type="title" style={styles.headerTitle}>
-              MatchMind
-            </ThemedText>
-          </ThemedView>
+          <Logo size={60} />
           <TopNavActions color={theme.primary} />
         </ThemedView>
 
@@ -158,8 +153,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     marginBottom: Spacing.one,
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
-  headerTitle: { fontSize: 24 },
   nudgeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   sectionTitle: { fontSize: 20 },
