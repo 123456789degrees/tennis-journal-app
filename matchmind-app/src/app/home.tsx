@@ -6,10 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { TopNavActions } from '@/components/top-nav-actions';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Logo } from '@/components/ui/logo';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { refreshPracticeInsights } from '@/data/insights';
 import type { Match, Opponent, PracticeInsight } from '@/data/models';
@@ -50,11 +48,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
-        <ThemedView style={styles.header}>
-          <Logo size={60} />
-          <TopNavActions color={theme.primary} />
-        </ThemedView>
-
         <Button
           label="Log a match"
           icon="add-circle"
@@ -142,16 +135,8 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    paddingTop: Spacing.three,
     gap: Spacing.three,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-    marginBottom: Spacing.one,
   },
   nudgeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },

@@ -28,7 +28,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'MatchMind', headerShown: false }} />
-        <Stack.Screen name="home" options={{ title: 'MatchMind', headerShown: false }} />
+        <Stack.Screen name="home" options={{ title: 'MatchMind' }} />
         <Stack.Screen name="log-match" options={{ title: 'Log Match' }} />
         <Stack.Screen name="select-opponent" options={{ title: 'Opponents' }} />
         <Stack.Screen name="opponent/[id]" options={{ title: 'Opponent' }} />
