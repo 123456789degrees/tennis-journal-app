@@ -39,6 +39,39 @@ function mapItems(items: any[] | undefined): DrillVideo[] {
     }));
 }
 
+// Stroke names and filler words are present in almost every result YouTube
+// returns for a query like "backhand pressure drill" regardless of true
+// relevance — they don't discriminate. Whatever's LEFT after stripping them
+// (here, "pressure") is the word actually distinguishing this drill from a
+// generic one, so it's what results should be re-ranked against.
+const NON_DISCRIMINATING_WORDS = new Set([
+  'drill', 'drills', 'tennis', 'tutorial', 'tutorials', 'tip', 'tips', 'practice', 'video',
+  'how', 'to', 'the', 'a', 'and', 'for', 'your', 'with',
+  'forehand', 'backhand', 'serve', 'volley', 'volleys', 'footwork', 'return', 'returns',
+  'slice', 'topspin', 'drop', 'shot', 'overhead', 'smash', 'approach', 'net',
+]);
+
+function discriminatingWords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z]/g, ''))
+    .filter((w) => w.length > 2 && !NON_DISCRIMINATING_WORDS.has(w));
+}
+
+// Re-ranks so videos whose title actually mentions the specific qualifier
+// (not just the stroke type every candidate already matches) come first,
+// without discarding the rest — a stable sort, so relevance order is the
+// tiebreaker exactly like before when nothing distinguishes two candidates.
+function preferDiscriminating(videos: DrillVideo[], words: string[]): DrillVideo[] {
+  if (words.length === 0) return videos;
+  return [...videos].sort((a, b) => {
+    const aMatch = words.some((w) => a.title.toLowerCase().includes(w)) ? 1 : 0;
+    const bMatch = words.some((w) => b.title.toLowerCase().includes(w)) ? 1 : 0;
+    return bMatch - aMatch;
+  });
+}
+
 export async function POST(request: Request) {
   const {
     query,
@@ -88,9 +121,13 @@ export async function POST(request: Request) {
       // The medium-duration filter (~4-20 min) is a nice-to-have, but a
       // specific drill query can already return few/no results on its own —
       // narrowing further by duration only makes that worse. Try filtered
-      // first, fall back to unfiltered before giving up.
-      let general = await search({ videoDuration: 'medium', maxResults: '4' });
-      if (general.length === 0) general = await search({ maxResults: '4' });
+      // first, fall back to unfiltered before giving up. Fetch more than we
+      // need (8) so there's real material to re-rank for relevance instead
+      // of just accepting whatever YouTube ranked first.
+      let general = await search({ videoDuration: 'medium', maxResults: '8' });
+      if (general.length === 0) general = await search({ maxResults: '8' });
+
+      general = preferDiscriminating(general, discriminatingWords(query));
 
       for (const v of general) {
         if (results.length >= 2) break;

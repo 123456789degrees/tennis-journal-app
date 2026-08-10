@@ -21,9 +21,7 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: theme.background },
-          header: ({ options, back }) => (
-            <AppHeader title={options.title} showBack={!!back} />
-          ),
+          header: ({ options }) => <AppHeader title={options.title} />,
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
