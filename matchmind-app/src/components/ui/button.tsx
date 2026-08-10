@@ -78,7 +78,7 @@ export function Button({
 
   const gradient = gradients[variant];
   const iconColor = textColors[variant];
-  const iconSize = size === 'large' ? 20 : 17;
+  const iconSize = size === 'large' ? 23 : 20;
   const isFilled = variant === 'primary' || variant === 'accent' || variant === 'danger';
 
   // A springy lift-and-grow on hover (web only — there's no hover on touch),
@@ -205,6 +205,6 @@ const styles = StyleSheet.create({
   },
   fullWidth: { alignSelf: 'stretch' },
   icon: { marginRight: Spacing.one },
-  label: { fontWeight: '700', fontSize: 15 },
-  labelLarge: { fontSize: 18 },
+  label: { fontWeight: '700', fontSize: 17 },
+  labelLarge: { fontSize: 20 },
 });

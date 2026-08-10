@@ -79,21 +79,21 @@ export const Fonts = Platform.select({
 });
 
 export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+  half: 4,
+  one: 6,
+  two: 12,
+  three: 22,
+  four: 32,
+  five: 44,
+  six: 88,
 } as const;
 
 export const Radius = {
-  small: 8,
-  medium: 14,
-  large: 20,
+  small: 10,
+  medium: 16,
+  large: 24,
   pill: 999,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const MaxContentWidth = 920;

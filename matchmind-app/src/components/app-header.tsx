@@ -30,7 +30,7 @@ export function AppHeader({ title, showBack }: { title?: string; showBack: boole
           <HomeLogoLink />
           {showBack ? (
             <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-              <Ionicons name="chevron-back" size={22} color={theme.primaryText} />
+              <Ionicons name="chevron-back" size={26} color={theme.primaryText} />
             </Pressable>
           ) : null}
           <ThemedText style={[styles.title, { color: theme.primaryText }]}>{title}</ThemedText>
@@ -64,7 +64,7 @@ function HomeLogoLink() {
       {...hoverProps}
     >
       <Animated.View style={{ transform: [{ scale }] }}>
-        <Logo size={26} />
+        <Logo size={40} />
       </Animated.View>
     </Pressable>
   );
@@ -84,5 +84,5 @@ const styles = StyleSheet.create({
   left: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, flexShrink: 1 },
   logoButton: { padding: Spacing.half },
   backButton: { padding: Spacing.half },
-  title: { fontSize: 17, fontWeight: '700' },
+  title: { fontSize: 20, fontWeight: '700' },
 });

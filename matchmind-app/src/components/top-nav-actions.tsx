@@ -130,7 +130,7 @@ function NavLink({
       {...hoverProps}
     >
       <Animated.View style={[styles.linkInner, { transform: [{ translateY: lift }] }]}>
-        <Ionicons name={item.icon} size={17} color={color} />
+        <Ionicons name={item.icon} size={20} color={color} />
         <ThemedText
           type="small"
           style={[styles.label, { color, fontWeight: active ? '800' : '600' }]}
@@ -155,5 +155,5 @@ const styles = StyleSheet.create({
   },
   link: { paddingVertical: Spacing.half, paddingHorizontal: Spacing.two, zIndex: 1 },
   linkInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
-  label: { fontSize: 14 },
+  label: {},
 });
