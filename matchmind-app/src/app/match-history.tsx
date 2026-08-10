@@ -174,9 +174,13 @@ export default function MatchHistoryScreen() {
         />
 
         {hasActiveFilters ? (
-          <Pressable onPress={clearFilters} style={styles.clearFiltersRow} hitSlop={8}>
-            <Ionicons name="refresh-outline" size={14} color={theme.textSecondary} />
-            <ThemedText type="small" themeColor="textSecondary">
+          <Pressable
+            onPress={clearFilters}
+            style={[styles.clearFiltersRow, { borderColor: theme.danger }]}
+            hitSlop={8}
+          >
+            <Ionicons name="close-circle" size={18} color={theme.danger} />
+            <ThemedText type="smallBold" style={{ color: theme.danger }}>
               Clear filters
             </ThemedText>
           </Pressable>
@@ -280,6 +284,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.half,
     alignSelf: 'flex-start',
+    borderWidth: 1.5,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
   },
   listContent: { paddingBottom: Spacing.four },
   emptyText: { paddingVertical: Spacing.three, textAlign: 'center' },

@@ -9,12 +9,13 @@ import { Radius, Spacing } from '@/constants/theme';
 interface NavItem {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  href: '/select-opponent' | '/match-history' | '/settings';
+  href: '/select-opponent' | '/match-history' | '/practice' | '/settings';
 }
 
 const ITEMS: NavItem[] = [
   { label: 'Opponents', icon: 'people-outline', href: '/select-opponent' },
   { label: 'All matches', icon: 'list-outline', href: '/match-history' },
+  { label: 'Practice', icon: 'sparkles-outline', href: '/practice' },
   { label: 'Settings', icon: 'settings-outline', href: '/settings' },
 ];
 
