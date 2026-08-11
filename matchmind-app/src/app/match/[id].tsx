@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatBox } from '@/components/ui/stat-box';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { invalidateInsightsAfterMatchDeleted } from '@/data/insights';
 import { fetchMatchNotesSummary, type RawMatchNotes } from '@/data/match-notes';
 import type { Match, Opponent } from '@/data/models';
 import { deleteMatch, getMatch, getOpponent, saveMatch } from '@/data/storage';
@@ -63,6 +64,11 @@ export default function MatchDetailScreen() {
   async function handleDelete() {
     if (!playerId || !match) return;
     await deleteMatch(playerId, match.id);
+    // Whatever's currently active in Practice may have been counting this
+    // match — force it to re-analyze against what's actually left instead
+    // of leaving a stale drill up.
+    await invalidateInsightsAfterMatchDeleted(playerId);
+    setConfirmingDelete(false);
     router.replace('/match-history');
   }
 
@@ -198,20 +204,42 @@ export default function MatchDetailScreen() {
           </ThemedView>
         </ThemedView>
 
-        {confirmingDelete ? (
-          <Card tint="accent">
-            <ThemedText type="smallBold">Delete this match? This can&apos;t be undone.</ThemedText>
-            <ThemedView style={styles.actionsRow}>
-              <ThemedView style={styles.actionFlex}>
-                <Button label="Cancel" variant="outline" onPress={() => setConfirmingDelete(false)} fullWidth />
-              </ThemedView>
-              <ThemedView style={styles.actionFlex}>
-                <Button label="Yes, delete" variant="danger" onPress={handleDelete} fullWidth />
-              </ThemedView>
-            </ThemedView>
-          </Card>
-        ) : null}
       </ScrollView>
+
+      {/* A confirmation that just expanded inline at the bottom of this
+          (often long) scroll view needed scrolling further down to even
+          see — a modal overlay is always in view regardless of scroll
+          position, on any screen size. */}
+      <Modal
+        visible={confirmingDelete}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmingDelete(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)}>
+          <Pressable style={styles.modalCardWrap} onPress={(e) => e.stopPropagation()}>
+            <Card tint="accent" style={styles.modalCard}>
+              <ThemedText type="smallBold">Delete this match?</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                This can&apos;t be undone.
+              </ThemedText>
+              <ThemedView style={styles.actionsRow}>
+                <ThemedView style={styles.actionFlex}>
+                  <Button
+                    label="Cancel"
+                    variant="outline"
+                    onPress={() => setConfirmingDelete(false)}
+                    fullWidth
+                  />
+                </ThemedView>
+                <ThemedView style={styles.actionFlex}>
+                  <Button label="Yes, delete" variant="danger" onPress={handleDelete} fullWidth />
+                </ThemedView>
+              </ThemedView>
+            </Card>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -234,4 +262,13 @@ const styles = StyleSheet.create({
   fieldSpacing: { marginTop: Spacing.one },
   actionsRow: { flexDirection: 'row', gap: Spacing.two },
   actionFlex: { flex: 1 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  modalCardWrap: { width: '100%', maxWidth: 420 },
+  modalCard: { gap: Spacing.two },
 });

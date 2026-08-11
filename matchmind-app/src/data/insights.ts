@@ -199,3 +199,20 @@ export async function forceRefreshPracticeInsights(playerId: string): Promise<bo
 
   return runAnalysis(playerId, recent, excludePatterns, true);
 }
+
+// Deleting a match shifts which matches count as "recent" — an insight
+// that was active before the delete may now be counting a match that no
+// longer exists, or may no longer reflect the real top-8 window at all.
+// Dismiss whatever's currently active and clear the "already analyzed"
+// marker so the next visit to Practice re-analyzes for real, even if the
+// deleted match wasn't the single most-recent one (the usual gate only
+// looks at that one id, which wouldn't otherwise notice this change).
+export async function invalidateInsightsAfterMatchDeleted(playerId: string): Promise<void> {
+  const all = await listInsights(playerId);
+  await Promise.all(
+    all
+      .filter((i) => i.status === 'active')
+      .map((i) => saveInsight(playerId, { ...i, status: 'dismissed' }))
+  );
+  await setLastAnalyzedMatchId(playerId, '');
+}
