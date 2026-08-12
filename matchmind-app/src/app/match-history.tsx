@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -190,6 +191,7 @@ export default function MatchHistoryScreen() {
           data={filtered}
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.listContent}
+          ListFooterComponent={<Copyright />}
           ListEmptyComponent={
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
               {matches.length === 0

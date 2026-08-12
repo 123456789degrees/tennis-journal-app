@@ -68,3 +68,49 @@ export function summarizeScouting(matches: Match[]): ScoutingSummary {
     whatToImprove: summarizeField((m) => m.selfReflection?.whatToImprove ?? '', oldestFirst),
   };
 }
+
+// The real AI version of the summary above (see api/scouting-summary+api.ts)
+// — one synthesized sentence per field across the whole match history, not
+// a keyword-matched sentiment guess. Falls back to the heuristic per field
+// (not all-or-nothing) if the key isn't configured or a field comes back
+// empty, so a slow/failed AI call never leaves a box blank.
+export async function fetchScoutingSummary(
+  opponentName: string,
+  matches: Match[]
+): Promise<ScoutingSummary> {
+  const fallback = summarizeScouting(matches);
+  const oldestFirst = [...matches].sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  try {
+    const res = await fetch('/api/scouting-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        opponentName,
+        matches: oldestFirst.map((m) => ({
+          date: m.date,
+          forehand: m.scoutingNotes?.forehand ?? '',
+          serve: m.scoutingNotes?.serve ?? '',
+          backhand: m.scoutingNotes?.backhand ?? '',
+          mental: m.scoutingNotes?.mental ?? '',
+          other: m.scoutingNotes?.other ?? '',
+          whatWentWell: m.selfReflection?.whatWentWell ?? '',
+          whatToImprove: m.selfReflection?.whatToImprove ?? '',
+        })),
+      }),
+    });
+    const data = await res.json();
+    const ai = (data.summary ?? {}) as Partial<ScoutingSummary>;
+    return {
+      forehand: ai.forehand || fallback.forehand,
+      serve: ai.serve || fallback.serve,
+      backhand: ai.backhand || fallback.backhand,
+      mental: ai.mental || fallback.mental,
+      other: ai.other || fallback.other,
+      whatWentWell: ai.whatWentWell || fallback.whatWentWell,
+      whatToImprove: ai.whatToImprove || fallback.whatToImprove,
+    };
+  } catch {
+    return fallback;
+  }
+}

@@ -15,6 +15,7 @@ interface RequestBody {
   query: string; // the drill text, e.g. "Cross-court backhand consistency drill"
   likedChannelIds?: string[];
   dislikedChannelIds?: string[];
+  excludeVideoIds?: string[];
 }
 
 interface DrillVideo {
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
     query,
     likedChannelIds = [],
     dislikedChannelIds = [],
+    excludeVideoIds = [],
   } = (await request.json()) as RequestBody;
 
   const apiKey = process.env.YOUTUBE_API_KEY;
@@ -111,7 +113,11 @@ export async function POST(request: Request) {
       if (results.length >= 2 || !channelId) continue;
       const fromLiked = await search({ channelId, maxResults: '1' });
       for (const v of fromLiked) {
-        if (!dislikedChannelIds.includes(v.channelId) && !results.some((r) => r.id === v.id)) {
+        if (
+          !dislikedChannelIds.includes(v.channelId) &&
+          !excludeVideoIds.includes(v.id) &&
+          !results.some((r) => r.id === v.id)
+        ) {
           results.push(v);
         }
       }
@@ -132,6 +138,7 @@ export async function POST(request: Request) {
       for (const v of general) {
         if (results.length >= 2) break;
         if (dislikedChannelIds.includes(v.channelId)) continue;
+        if (excludeVideoIds.includes(v.id)) continue;
         if (results.some((r) => r.id === v.id)) continue;
         results.push(v);
       }

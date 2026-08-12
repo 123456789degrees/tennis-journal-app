@@ -1,26 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { fetchDrillVideos, shortenForSearch, type DrillVideo } from '@/data/drill-videos';
+import { fetchDrillVideos, shortenForSearch, type ChannelBias, type DrillVideo } from '@/data/drill-videos';
 import { forceRefreshPracticeInsights, refreshPracticeInsights } from '@/data/insights';
-import type { CorrectedIssue, PracticeInsight, VideoFeedback } from '@/data/models';
+import type { PracticeInsight, VideoFeedback } from '@/data/models';
 import { listInsights, listVideoFeedback, saveInsight, saveVideoFeedback } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 import { webLinkProps } from '@/utils/web-link-props';
-
-const ISSUE_OPTIONS: { value: CorrectedIssue; label: string }[] = [
-  { value: 'stroke', label: 'My stroke technique' },
-  { value: 'footwork', label: 'My footwork / movement' },
-  { value: 'shot-selection', label: 'Shot selection' },
-];
 
 // Liking/disliking is a per-video fact (you might like one video from a
 // channel and not another) — but future searches still benefit from a
@@ -40,6 +35,7 @@ export default function PracticeScreen() {
   const playerId = useCurrentPlayerId();
   const [insights, setInsights] = useState<PracticeInsight[]>([]);
   const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [correctionText, setCorrectionText] = useState('');
   const [ratingId, setRatingId] = useState<string | null>(null);
   const [videosByInsight, setVideosByInsight] = useState<Record<string, DrillVideo[]>>({});
   const [loadingVideoIds, setLoadingVideoIds] = useState<Record<string, boolean>>({});
@@ -95,11 +91,33 @@ export default function PracticeScreen() {
     );
   }
 
-  async function handleCorrect(insight: PracticeInsight, issue: CorrectedIssue) {
+  // A fixed list of reasons (stroke/footwork/shot-selection) couldn't cover
+  // real cases — "this is really a mental thing," "the video wasn't
+  // relevant" — so the player just types what was actually wrong. What
+  // happens next depends on WHAT kind of "not quite" this is: if it's about
+  // the video itself, the topic's fine — just get different videos for the
+  // same query. Otherwise the topic itself was wrong, so replace it with
+  // something genuinely different instead of leaving a gap once dismissed.
+  async function handleCorrect(insight: PracticeInsight) {
     if (!playerId) return;
-    const updated: PracticeInsight = { ...insight, status: 'corrected', correctedIssue: issue };
-    await saveInsight(playerId, updated);
+    const note = correctionText.trim();
+    if (!note) return;
     setCorrectingId(null);
+    setCorrectionText('');
+
+    if (/video/i.test(note)) {
+      const query = insight.drillSearchQuery || shortenForSearch(insight.suggestedDrill);
+      const currentVideoIds = (videosByInsight[insight.id] ?? []).map((v) => v.id);
+      const bias: ChannelBias = { ...channelBiasFrom(videoFeedback), excludeVideoIds: currentVideoIds };
+      setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
+      const videos = await fetchDrillVideos(query, bias);
+      setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
+      setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: false }));
+      return;
+    }
+
+    await saveInsight(playerId, { ...insight, status: 'corrected', correctionNote: note });
+    await forceRefreshPracticeInsights(playerId);
     load();
   }
 
@@ -287,7 +305,10 @@ export default function PracticeScreen() {
                       </Pressable>
                       <Pressable
                         style={styles.actionLink}
-                        onPress={() => setCorrectingId(correctingId === insight.id ? null : insight.id)}
+                        onPress={() => {
+                          setCorrectingId(correctingId === insight.id ? null : insight.id);
+                          setCorrectionText('');
+                        }}
                       >
                         <ThemedText type="linkPrimary" style={{ color: theme.text, fontWeight: '700' }}>
                           Not quite
@@ -304,20 +325,30 @@ export default function PracticeScreen() {
 
                     {correctingId === insight.id ? (
                       <ThemedView style={styles.correctionBox}>
-                        <ThemedText type="smallBold">What was the real issue?</ThemedText>
-                        {ISSUE_OPTIONS.map((opt) => (
-                          <Pressable
-                            key={opt.value}
-                            style={styles.issueOption}
-                            onPress={() => handleCorrect(insight, opt.value)}
-                          >
-                            <Ionicons name="radio-button-off" size={16} color={theme.text} />
-                            <ThemedText>{opt.label}</ThemedText>
-                          </Pressable>
-                        ))}
+                        <ThemedText type="smallBold">What wasn&apos;t quite right?</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
-                          This corrects the tip and trains future ones.
+                          e.g. &quot;this is really a mental thing, not a stroke issue&quot; or &quot;the
+                          video wasn&apos;t relevant&quot; — if it&apos;s about the video, you&apos;ll get
+                          different ones for the same drill; otherwise you&apos;ll get a different drill.
                         </ThemedText>
+                        <TextInput
+                          style={[styles.correctionInput, { borderColor: theme.border, color: theme.text }]}
+                          placeholder="Type what was wrong..."
+                          placeholderTextColor={theme.textSecondary}
+                          value={correctionText}
+                          onChangeText={setCorrectionText}
+                          multiline
+                        />
+                        <Pressable
+                          style={[styles.actionLink, !correctionText.trim() && styles.disabled]}
+                          onPress={() => handleCorrect(insight)}
+                          disabled={!correctionText.trim()}
+                        >
+                          <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                            Submit
+                          </ThemedText>
+                          <Ionicons name="arrow-forward" size={14} color={theme.primary} />
+                        </Pressable>
                       </ThemedView>
                     ) : null}
                   </>
@@ -326,6 +357,7 @@ export default function PracticeScreen() {
             );
           })
         )}
+        <Copyright />
       </ScrollView>
     </SafeAreaView>
   );
@@ -356,7 +388,16 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two, flexWrap: 'wrap' },
   actionLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   correctionBox: { marginTop: Spacing.two, gap: Spacing.one },
-  issueOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, paddingVertical: Spacing.one },
+  correctionInput: {
+    borderWidth: 1,
+    borderRadius: Radius.small,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
+    minHeight: 44,
+    textAlignVertical: 'top',
+  },
+  disabled: { opacity: 0.5 },
   ratingBox: { marginTop: Spacing.two, gap: Spacing.two },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   ratingVideoTitle: { flex: 1 },

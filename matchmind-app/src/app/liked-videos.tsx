@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -51,6 +52,7 @@ export default function LikedVideosScreen() {
           data={liked}
           keyExtractor={(v) => v.videoId}
           contentContainerStyle={styles.listContent}
+          ListFooterComponent={<Copyright />}
           ListEmptyComponent={
             <ThemedView style={styles.emptyState}>
               <Ionicons name="heart-outline" size={28} color={theme.textSecondary} />

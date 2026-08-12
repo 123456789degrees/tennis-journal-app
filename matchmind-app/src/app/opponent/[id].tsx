@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { StatBox } from '@/components/ui/stat-box';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { fetchOpponentTip } from '@/data/ai-tips';
 import type { Match, Opponent } from '@/data/models';
-import { summarizeScouting } from '@/data/scouting-summary';
+import { fetchScoutingSummary, summarizeScouting, type ScoutingSummary } from '@/data/scouting-summary';
 import { getOpponent, listMatchesForOpponent } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,6 +26,7 @@ export default function OpponentDetailScreen() {
 
   const [opponent, setOpponent] = useState<Opponent | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [summary, setSummary] = useState<ScoutingSummary | null>(null);
   const [aiTip, setAiTip] = useState('');
   const [aiTipLoading, setAiTipLoading] = useState(false);
 
@@ -35,9 +37,15 @@ export default function OpponentDetailScreen() {
     setOpponent(o);
     setMatches(m);
     if (o) {
+      // The heuristic shows immediately (synchronous, so no blank boxes
+      // while waiting), then gets replaced by the real AI synthesis once
+      // it resolves — same pattern Match Detail uses for its notes.
+      const heuristic = summarizeScouting(m);
+      setSummary(heuristic);
+      fetchScoutingSummary(o.name, m).then(setSummary);
+
       setAiTipLoading(true);
-      const summary = summarizeScouting(m);
-      const tip = await fetchOpponentTip(o.name, o.playstyle, m, summary);
+      const tip = await fetchOpponentTip(o.name, o.playstyle, m, heuristic);
       setAiTip(tip);
       setAiTipLoading(false);
     }
@@ -62,7 +70,6 @@ export default function OpponentDetailScreen() {
 
   const wins = matches.filter((m) => m.result === 'Win').length;
   const losses = matches.filter((m) => m.result === 'Loss').length;
-  const summary = summarizeScouting(matches);
   const placeholder = 'Not logged yet.';
 
   return (
@@ -103,13 +110,13 @@ export default function OpponentDetailScreen() {
           </Card>
         ) : (
           <ThemedView style={styles.shotGrid}>
-            <StatBox label="Forehand" value={summary.forehand || placeholder} />
-            <StatBox label="Serve" value={summary.serve || placeholder} />
-            <StatBox label="Backhand" value={summary.backhand || placeholder} />
-            <StatBox label="Mental" value={summary.mental || placeholder} />
-            <StatBox label="Other" value={summary.other || placeholder} />
-            <StatBox label="What went well" value={summary.whatWentWell || placeholder} />
-            <StatBox label="What to improve" value={summary.whatToImprove || placeholder} />
+            <StatBox label="Forehand" value={summary?.forehand || placeholder} />
+            <StatBox label="Serve" value={summary?.serve || placeholder} />
+            <StatBox label="Backhand" value={summary?.backhand || placeholder} />
+            <StatBox label="Mental" value={summary?.mental || placeholder} />
+            <StatBox label="Other" value={summary?.other || placeholder} />
+            <StatBox label="What went well" value={summary?.whatWentWell || placeholder} />
+            <StatBox label="What to improve" value={summary?.whatToImprove || placeholder} />
           </ThemedView>
         )}
 
@@ -163,6 +170,7 @@ export default function OpponentDetailScreen() {
           size="large"
           fullWidth
         />
+        <Copyright />
       </ScrollView>
     </SafeAreaView>
   );

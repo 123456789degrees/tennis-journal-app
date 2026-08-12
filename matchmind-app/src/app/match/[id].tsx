@@ -4,9 +4,9 @@ import { useCallback, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { TypeOrDictateField } from '@/components/type-or-dictate-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatBox } from '@/components/ui/stat-box';
@@ -14,7 +14,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { invalidateInsightsAfterMatchDeleted } from '@/data/insights';
 import { fetchMatchNotesSummary, type RawMatchNotes } from '@/data/match-notes';
 import type { Match, Opponent } from '@/data/models';
-import { deleteMatch, getMatch, getOpponent, saveMatch } from '@/data/storage';
+import { deleteMatch, getMatch, getOpponent } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -53,13 +53,6 @@ export default function MatchDetailScreen() {
       });
     }, [playerId, id])
   );
-
-  async function updateNotes(notes: string) {
-    if (!playerId || !match) return;
-    const updated = { ...match, matchNotes: notes };
-    setMatch(updated);
-    await saveMatch(playerId, updated);
-  }
 
   async function handleDelete() {
     if (!playerId || !match) return;
@@ -162,19 +155,6 @@ export default function MatchDetailScreen() {
           </ThemedView>
         ) : null}
 
-        <Card>
-          <ThemedText type="smallBold">Match notes</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            type or dictate — add more now or later when calmer
-          </ThemedText>
-          <TypeOrDictateField
-            value={match.matchNotes}
-            onChangeText={updateNotes}
-            placeholder="Add notes now or later when calmer..."
-            multiline
-          />
-        </Card>
-
         <Button
           label="Edit match"
           icon="create-outline"
@@ -204,6 +184,7 @@ export default function MatchDetailScreen() {
           </ThemedView>
         </ThemedView>
 
+        <Copyright />
       </ScrollView>
 
       {/* A confirmation that just expanded inline at the bottom of this

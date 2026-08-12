@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { PlaystylePicker } from '@/components/playstyle-picker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -355,6 +356,7 @@ export default function LogMatchScreen() {
             Opponent and win/loss are required — everything else is optional.
           </ThemedText>
         ) : null}
+        <Copyright />
       </ScrollView>
     </SafeAreaView>
   );

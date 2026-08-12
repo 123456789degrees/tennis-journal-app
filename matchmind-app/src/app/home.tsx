@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -83,11 +84,7 @@ export default function HomeScreen() {
               No matches yet — log your first one above.
             </ThemedText>
           }
-          ListFooterComponent={
-            <ThemedText type="small" themeColor="textSecondary" style={styles.copyright}>
-              © 2026 MatchMind
-            </ThemedText>
-          }
+          ListFooterComponent={<Copyright />}
           renderItem={({ item }) => {
             const opp = getOpponent(item.opponentId);
             const improve = item.selfReflection?.whatToImprove?.trim();
@@ -147,7 +144,6 @@ const styles = StyleSheet.create({
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   sectionTitle: { fontSize: 20 },
   emptyText: { paddingVertical: Spacing.three },
-  copyright: { textAlign: 'center', paddingTop: Spacing.four, paddingBottom: Spacing.two },
   matchRow: {
     paddingVertical: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,

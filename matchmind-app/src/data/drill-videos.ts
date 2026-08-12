@@ -10,6 +10,10 @@ export interface DrillVideo {
 export interface ChannelBias {
   likedChannelIds: string[];
   dislikedChannelIds: string[];
+  // Video ids already shown for this drill that the player explicitly said
+  // weren't good — excluded so "show me different videos" for the same
+  // topic doesn't just hand back the same top result again.
+  excludeVideoIds?: string[];
 }
 
 const KEYWORDS = [
@@ -60,6 +64,7 @@ export async function fetchDrillVideos(
         query,
         likedChannelIds: bias?.likedChannelIds ?? [],
         dislikedChannelIds: bias?.dislikedChannelIds ?? [],
+        excludeVideoIds: bias?.excludeVideoIds ?? [],
       }),
     });
     const data = await res.json();

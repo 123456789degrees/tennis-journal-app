@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, TextInput } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Copyright } from '@/components/copyright';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -213,34 +214,57 @@ export default function SettingsScreen() {
 
         <Button label="Sign out" icon="log-out-outline" variant="outline" onPress={handleSignOut} fullWidth />
 
-        {confirmingDelete ? (
-          <Card style={styles.dangerCard}>
-            <ThemedText type="smallBold" style={{ color: theme.danger }}>
-              Delete your account?
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              This permanently deletes your account, every opponent, every match, and every
-              practice insight on this device. This can&apos;t be undone.
-            </ThemedText>
-            <ThemedView style={styles.dangerButtonRow}>
-              <ThemedView style={styles.buttonFlex}>
-                <Button label="Cancel" variant="outline" onPress={() => setConfirmingDelete(false)} fullWidth />
-              </ThemedView>
-              <ThemedView style={styles.buttonFlex}>
-                <Button label="Yes, delete my account" variant="danger" onPress={handleDeleteAccount} fullWidth />
-              </ThemedView>
-            </ThemedView>
-          </Card>
-        ) : (
-          <Button
-            label="Delete account"
-            icon="trash-outline"
-            variant="danger"
-            onPress={() => setConfirmingDelete(true)}
-            fullWidth
-          />
-        )}
+        <Button
+          label="Delete account"
+          icon="trash-outline"
+          variant="danger"
+          onPress={() => setConfirmingDelete(true)}
+          fullWidth
+        />
+        <Copyright />
       </ScrollView>
+
+      {/* A modal overlay instead of an inline card at the bottom of the
+          page — same fix as Match Detail's delete confirmation, which had
+          the same problem: easy to lose below the fold on a long page. */}
+      <Modal
+        visible={confirmingDelete}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmingDelete(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setConfirmingDelete(false)}>
+          <Pressable style={styles.modalCardWrap} onPress={(e) => e.stopPropagation()}>
+            <Card style={styles.dangerCard}>
+              <ThemedText type="smallBold" style={{ color: theme.danger }}>
+                Delete your account?
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                This permanently deletes your account, every opponent, every match, and every
+                practice insight on this device. This can&apos;t be undone.
+              </ThemedText>
+              <ThemedView style={styles.dangerButtonRow}>
+                <ThemedView style={styles.buttonFlex}>
+                  <Button
+                    label="Cancel"
+                    variant="outline"
+                    onPress={() => setConfirmingDelete(false)}
+                    fullWidth
+                  />
+                </ThemedView>
+                <ThemedView style={styles.buttonFlex}>
+                  <Button
+                    label="Yes, delete my account"
+                    variant="danger"
+                    onPress={handleDeleteAccount}
+                    fullWidth
+                  />
+                </ThemedView>
+              </ThemedView>
+            </Card>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -270,6 +294,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: Spacing.one,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  modalCardWrap: { width: '100%', maxWidth: 420 },
   dangerCard: { gap: Spacing.two },
   dangerButtonRow: { flexDirection: 'row', gap: Spacing.two },
   buttonFlex: { flex: 1 },

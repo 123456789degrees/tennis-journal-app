@@ -59,7 +59,6 @@ export interface Match {
 }
 
 export type InsightStatus = "active" | "dismissed" | "corrected" | "completed";
-export type CorrectedIssue = "stroke" | "footwork" | "shot-selection";
 
 export interface PracticeInsight {
   id: string;
@@ -73,7 +72,10 @@ export interface PracticeInsight {
   drillSearchQuery?: string;
   sourceMatchIds: string[];
   status: InsightStatus;
-  correctedIssue?: CorrectedIssue;
+  // What the player actually typed when marking this "Not quite" — a fixed
+  // list of reasons (stroke/footwork/shot-selection) couldn't cover real
+  // cases like "this is a mental thing" or "the video wasn't relevant."
+  correctionNote?: string;
 }
 
 // A player's like/dislike of one specific YouTube video (not its creator —
