@@ -62,7 +62,7 @@ export default function MatchDetailScreen() {
     // of leaving a stale drill up.
     await invalidateInsightsAfterMatchDeleted(playerId);
     setConfirmingDelete(false);
-    router.replace('/match-history');
+    router.replace('/home');
   }
 
   if (!match) {

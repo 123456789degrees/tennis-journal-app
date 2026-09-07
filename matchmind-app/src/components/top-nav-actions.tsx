@@ -5,16 +5,18 @@ import { Animated, Platform, Pressable, StyleSheet, View, type LayoutChangeEvent
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 interface NavItem {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  href: '/select-opponent' | '/match-history' | '/practice' | '/settings';
+  href: '/select-opponent' | '/practice' | '/settings';
 }
 
+// No "All matches" link — Home itself is the all-matches list now, and the
+// logo is always the way back to Home.
 const ITEMS: NavItem[] = [
   { label: 'Opponents', icon: 'people-outline', href: '/select-opponent' },
-  { label: 'All matches', icon: 'list-outline', href: '/match-history' },
   { label: 'Practice', icon: 'sparkles-outline', href: '/practice' },
   { label: 'Settings', icon: 'settings-outline', href: '/settings' },
 ];
@@ -85,7 +87,45 @@ export function TopNavActions({ color }: { color: string }) {
           onHoverChange={(hovering) => setHoveredHref(hovering ? item.href : null)}
         />
       ))}
+      <LogMatchCta />
     </View>
+  );
+}
+
+// The primary action, set apart from the plain nav links: filled with the
+// accent color (which pops against the primary-green header) instead of
+// blending in like Opponents/Practice/Settings do.
+function LogMatchCta() {
+  const router = useRouter();
+  const theme = useTheme();
+  const [scale] = useState(() => new Animated.Value(1));
+
+  function animateTo(toValue: number) {
+    Animated.spring(scale, { toValue, useNativeDriver: true, speed: 20, bounciness: 8 }).start();
+  }
+
+  const hoverProps =
+    Platform.OS === 'web'
+      ? { onHoverIn: () => animateTo(1.05), onHoverOut: () => animateTo(1) }
+      : {};
+
+  return (
+    <Pressable
+      onPress={() => router.push('/log-match')}
+      onPressIn={() => animateTo(0.95)}
+      onPressOut={() => animateTo(1)}
+      style={styles.ctaWrapper}
+      {...hoverProps}
+    >
+      <Animated.View
+        style={[styles.cta, { backgroundColor: theme.accent, transform: [{ scale }] }]}
+      >
+        <Ionicons name="add-circle" size={18} color={theme.accentText} />
+        <ThemedText type="smallBold" style={{ color: theme.accentText }}>
+          Log a match
+        </ThemedText>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -157,4 +197,13 @@ const styles = StyleSheet.create({
   link: { paddingVertical: Spacing.half, paddingHorizontal: Spacing.two, zIndex: 1 },
   linkInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   label: {},
+  ctaWrapper: { zIndex: 1 },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+    paddingVertical: Spacing.half,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.pill,
+  },
 });
