@@ -1,89 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Copyright } from '@/components/copyright';
+import { MatchRow } from '@/components/match-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { refreshPracticeInsights } from '@/data/insights';
-import { PLAYSTYLES, type Match, type Opponent, type Playstyle, type PracticeInsight } from '@/data/models';
+import type { Match, Opponent, PracticeInsight } from '@/data/models';
 import { listInsights, listMatches, listOpponents } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
-function truncate(text: string, max: number): string {
-  const trimmed = text.trim();
-  return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
-}
+const RECENT_COUNT = 5;
 
-type ResultFilter = 'All' | 'Win' | 'Loss';
-type SetsFilter = 'All' | 2 | 3;
-const RESULT_OPTIONS: ResultFilter[] = ['All', 'Win', 'Loss'];
-const SETS_OPTIONS: { value: SetsFilter; label: string }[] = [
-  { value: 'All', label: 'All' },
-  { value: 2, label: '2 sets' },
-  { value: 3, label: '3 sets' },
-];
-
-// Small labeled row of selectable chips — same visual language as
-// PlaystylePicker (accent fill when selected) so filters feel consistent
-// with the rest of the app.
-function FilterGroup<T extends string | number>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  const theme = useTheme();
-  return (
-    <ThemedView style={styles.filterGroup}>
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedView style={styles.chipRow}>
-        {options.map((opt) => {
-          const selected = opt.value === value;
-          return (
-            <Pressable
-              key={String(opt.value)}
-              onPress={() => onChange(opt.value)}
-              style={({ pressed }) => [
-                styles.chip,
-                {
-                  borderColor: selected ? theme.accent : theme.border,
-                  backgroundColor: selected ? theme.accent : 'transparent',
-                  opacity: pressed ? 0.75 : 1,
-                  transform: [{ scale: pressed ? 0.96 : 1 }],
-                },
-              ]}
-            >
-              <ThemedText
-                type="small"
-                style={selected ? { color: theme.accentText, fontWeight: '700' } : undefined}
-              >
-                {opt.label}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </ThemedView>
-    </ThemedView>
-  );
-}
-
-// Home IS the all-matches list — search, filters, and the full history —
-// with the practice nudge surfaced above it. There's no separate landing
-// dashboard: this was nearly a duplicate of the match-history screen, and
-// "log a match" now lives as the CTA in the header instead of a button here.
+// Home is a glanceable dashboard, not the full history — the practice
+// nudge plus the 5 most recent matches, with a link into match-history.tsx
+// for the complete searchable/filterable list. (An earlier pass merged the
+// two into one screen since they looked nearly identical, but that made
+// Home's filter chips alone fill the screen before a single match showed —
+// worse than just keeping the two apart with Home as a short preview.)
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -91,15 +31,6 @@ export default function HomeScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [nudge, setNudge] = useState<PracticeInsight | null>(null);
-  const [filter, setFilter] = useState('');
-  const [resultFilter, setResultFilter] = useState<ResultFilter>('All');
-  const [setsFilter, setSetsFilter] = useState<SetsFilter>('All');
-  const [playstyleFilter, setPlaystyleFilter] = useState<Playstyle | 'All'>('All');
-  // Collapsed by default — three rows of filter chips plus the nudge and
-  // search bar filled the entire screen before a single match was visible,
-  // which read as "broken" (you had to scroll past everything just to see
-  // there were any matches at all).
-  const [showFilters, setShowFilters] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -118,187 +49,58 @@ export default function HomeScreen() {
     return opponents.find((o) => o.id === opponentId);
   }
 
-  const filtered = matches.filter((m) => {
-    if (filter.trim()) {
-      const name = getOpponent(m.opponentId)?.name ?? '';
-      if (!name.toLowerCase().includes(filter.trim().toLowerCase())) return false;
-    }
-    if (resultFilter !== 'All' && m.result !== resultFilter) return false;
-    if (setsFilter !== 'All' && m.score.length !== setsFilter) return false;
-    if (playstyleFilter !== 'All' && (getOpponent(m.opponentId)?.playstyle ?? m.playstyleSnapshot) !== playstyleFilter)
-      return false;
-    return true;
-  });
-
-  const activeFilterCount =
-    (resultFilter !== 'All' ? 1 : 0) + (setsFilter !== 'All' ? 1 : 0) + (playstyleFilter !== 'All' ? 1 : 0);
-  const hasActiveFilters = !!filter.trim() || activeFilterCount > 0;
-
-  function clearFilters() {
-    setFilter('');
-    setResultFilter('All');
-    setSetsFilter('All');
-    setPlaystyleFilter('All');
-  }
-
-  const listHeader = (
-    <ThemedView style={styles.header}>
-      {nudge ? (
-        <Card tint="accent">
-          <ThemedView style={styles.nudgeHeaderRow}>
-            <Ionicons name="flash" size={16} color={theme.primary} />
-            <ThemedText type="smallBold">Practice nudge</ThemedText>
-          </ThemedView>
-          <ThemedText>{nudge.patternDescription}</ThemedText>
-          <Pressable style={styles.linkRow} onPress={() => router.push('/practice')}>
-            <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
-              See drill
-            </ThemedText>
-            <Ionicons name="chevron-forward" size={14} color={theme.primary} />
-          </Pressable>
-        </Card>
-      ) : null}
-
-      <ThemedText type="smallBold" style={styles.filterLabel}>
-        Search for opponent
-      </ThemedText>
-      <ThemedView
-        style={[
-          styles.searchRow,
-          { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-        ]}
-      >
-        <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
-        <TextInput
-          style={[styles.filterInput, { color: theme.text }]}
-          placeholder="Type an opponent's name..."
-          placeholderTextColor={theme.textSecondary}
-          value={filter}
-          onChangeText={setFilter}
-        />
-        {filter ? (
-          <Pressable onPress={() => setFilter('')} hitSlop={8}>
-            <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
-          </Pressable>
-        ) : null}
-      </ThemedView>
-
-      <Pressable
-        onPress={() => setShowFilters((v) => !v)}
-        style={[styles.filterToggle, { borderColor: theme.border }]}
-        hitSlop={8}
-      >
-        <Ionicons name="options-outline" size={16} color={theme.text} />
-        <ThemedText type="smallBold">
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-        </ThemedText>
-        <Ionicons
-          name={showFilters ? 'chevron-up' : 'chevron-down'}
-          size={16}
-          color={theme.textSecondary}
-        />
-      </Pressable>
-
-      {showFilters ? (
-        <>
-          <ThemedView style={styles.filterGroupsRow}>
-            <FilterGroup
-              label="Result"
-              options={RESULT_OPTIONS.map((v) => ({ value: v, label: v }))}
-              value={resultFilter}
-              onChange={setResultFilter}
-            />
-            <FilterGroup
-              label="Match length"
-              options={SETS_OPTIONS}
-              value={setsFilter}
-              onChange={setSetsFilter}
-            />
-          </ThemedView>
-          <FilterGroup
-            label="Opponent playstyle"
-            options={[{ value: 'All' as const, label: 'All' }, ...PLAYSTYLES.map((p) => ({ value: p, label: p }))]}
-            value={playstyleFilter}
-            onChange={setPlaystyleFilter}
-          />
-
-          {hasActiveFilters ? (
-            <Pressable
-              onPress={clearFilters}
-              style={[styles.clearFiltersRow, { borderColor: theme.danger }]}
-              hitSlop={8}
-            >
-              <Ionicons name="close-circle" size={18} color={theme.danger} />
-              <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                Clear filters
-              </ThemedText>
-            </Pressable>
-          ) : null}
-        </>
-      ) : null}
-    </ThemedView>
-  );
+  const recent = matches.slice(0, RECENT_COUNT);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <ThemedView style={styles.container}>
-        <FlatList
-          data={filtered}
-          keyExtractor={(m) => m.id}
-          contentContainerStyle={styles.listContent}
-          // The search bar, filters, and practice nudge scroll away with the
-          // list instead of staying pinned above it — pinning them squeezed
-          // the actual match rows into a tiny, separately-scrolling sliver
-          // of the page (the "only shows one match" bug).
-          ListHeaderComponent={listHeader}
-          ListFooterComponent={<Copyright />}
-          ListEmptyComponent={
-            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
-              {matches.length === 0
-                ? 'No matches yet — log your first one using the button above.'
-                : 'No matches match these filters.'}
+      <ScrollView contentContainerStyle={styles.container}>
+        {nudge ? (
+          <Card tint="accent">
+            <ThemedView style={styles.nudgeHeaderRow}>
+              <Ionicons name="flash" size={16} color={theme.primary} />
+              <ThemedText type="smallBold">Practice nudge</ThemedText>
+            </ThemedView>
+            <ThemedText>{nudge.patternDescription}</ThemedText>
+            <Pressable style={styles.linkRow} onPress={() => router.push('/practice')}>
+              <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
+                See drill
+              </ThemedText>
+              <Ionicons name="chevron-forward" size={14} color={theme.primary} />
+            </Pressable>
+          </Card>
+        ) : null}
+
+        <ThemedText type="subtitle" style={styles.sectionTitle}>
+          Recent matches
+        </ThemedText>
+
+        {recent.length === 0 ? (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+            No matches yet — log your first one using the button above.
+          </ThemedText>
+        ) : (
+          recent.map((match) => (
+            <MatchRow key={match.id} match={match} opponent={getOpponent(match.opponentId)} />
+          ))
+        )}
+
+        {matches.length > RECENT_COUNT ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.viewAllRow,
+              { borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => router.push('/match-history')}
+          >
+            <ThemedText type="smallBold" style={{ color: theme.primary }}>
+              View all matches
             </ThemedText>
-          }
-          renderItem={({ item }) => {
-            const opp = getOpponent(item.opponentId);
-            const improve = item.selfReflection?.whatToImprove?.trim();
-            return (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.row,
-                  { borderBottomColor: theme.border, opacity: pressed ? 0.6 : 1 },
-                ]}
-                onPress={() => router.push({ pathname: '/match/[id]', params: { id: item.id } })}
-              >
-                <ThemedView style={styles.rowTop}>
-                  <ThemedText>
-                    vs. {opp?.name ?? 'Unknown'} —{' '}
-                    <ThemedText
-                      style={{
-                        color: item.result === 'Win' ? theme.success : theme.danger,
-                        fontWeight: '700',
-                      }}
-                    >
-                      {item.result === 'Win' ? 'W' : 'L'}
-                    </ThemedText>{' '}
-                    {item.score.join(', ')}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {new Date(item.date).toLocaleDateString()}
-                  </ThemedText>
-                </ThemedView>
-                {opp?.playstyle || improve ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {opp?.playstyle}
-                    {opp?.playstyle && improve ? ' · ' : ''}
-                    {improve ? `Improve: ${truncate(improve, 44)}` : ''}
-                  </ThemedText>
-                ) : null}
-              </Pressable>
-            );
-          }}
-        />
-      </ThemedView>
+            <Ionicons name="chevron-forward" size={16} color={theme.primary} />
+          </Pressable>
+        ) : null}
+
+        <Copyright />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -306,69 +108,26 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   container: {
-    flex: 1,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
+    paddingBottom: Spacing.four,
+    gap: Spacing.three,
   },
-  header: { gap: Spacing.three, paddingBottom: Spacing.three },
   nudgeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
-  filterLabel: { marginBottom: -Spacing.one },
-  searchRow: {
+  sectionTitle: { fontSize: 20 },
+  emptyText: { paddingVertical: Spacing.three },
+  viewAllRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    borderWidth: 1,
-    borderRadius: Radius.small,
-    paddingHorizontal: Spacing.three,
-  },
-  filterInput: {
-    flex: 1,
-    paddingVertical: Spacing.two,
-    fontSize: 16,
-  },
-  filterToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.half,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
-  },
-  filterGroupsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.four,
-  },
-  filterGroup: { gap: Spacing.one },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
-  chip: {
     borderWidth: 1.5,
     borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.half,
-  },
-  clearFiltersRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.half,
-    alignSelf: 'flex-start',
-    borderWidth: 1.5,
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
-  },
-  listContent: { paddingBottom: Spacing.four },
-  emptyText: { paddingVertical: Spacing.three, textAlign: 'center' },
-  row: {
     paddingVertical: Spacing.two,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.half,
+    marginTop: Spacing.one,
   },
-  rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

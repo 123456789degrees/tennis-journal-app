@@ -62,7 +62,10 @@ export default function MatchDetailScreen() {
     // of leaving a stale drill up.
     await invalidateInsightsAfterMatchDeleted(playerId);
     setConfirmingDelete(false);
-    router.replace('/home');
+    // Back to wherever this was opened from — Home's recent-matches
+    // preview or the full All Matches list — rather than always bouncing
+    // to Home regardless of which one the user was actually browsing.
+    router.back();
   }
 
   if (!match) {
