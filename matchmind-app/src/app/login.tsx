@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -82,12 +82,8 @@ export default function LoginScreen() {
       >
       <ThemedView style={[styles.container, { backgroundColor: theme.primary }]}>
         <ThemedView style={styles.logoWrap}>
-          <Logo size={140} />
+          <Logo size={220} />
         </ThemedView>
-        <View style={styles.wordmarkRow}>
-          <Text style={[styles.wordmark, { color: theme.primaryText }]}>Match</Text>
-          <Text style={[styles.wordmark, styles.wordmarkAccent]}>Mind</Text>
-        </View>
         <ThemedText type="small" style={[styles.tagline, { color: theme.primaryText }]}>
           Your matches, captured in seconds.
         </ThemedText>
@@ -176,17 +172,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
   },
   logoWrap: { alignItems: 'center', marginBottom: Spacing.two },
-  wordmarkRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: Spacing.one,
-  },
-  wordmark: {
-    fontFamily: 'Poppins-ExtraBold',
-    fontSize: 44,
-    letterSpacing: 0.3,
-  },
-  wordmarkAccent: { color: '#C6E600' },
   tagline: { textAlign: 'center', marginBottom: Spacing.four, opacity: 0.9 },
   copyright: { textAlign: 'center', marginTop: Spacing.four, color: 'rgba(255,255,255,0.6)' },
   card: {

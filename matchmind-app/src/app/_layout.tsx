@@ -1,5 +1,4 @@
 import { Analytics } from '@vercel/analytics/react';
-import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -13,18 +12,12 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
-  // Just for the "Match"/"Mind" wordmark on the login hero — a real display
-  // face reads far better there than the system sans fallback. Gate
-  // splash-hide on it so it never flashes in the fallback font first.
-  const [fontsLoaded] = useFonts({
-    'Poppins-ExtraBold': require('../../assets/fonts/Poppins-ExtraBold.ttf'),
-  });
-
+  // The wordmark is baked into the logo artwork itself now (see
+  // components/ui/logo.tsx) — no custom font to load before showing the
+  // app, so hide the splash as soon as this mounts.
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) return null;
+    SplashScreen.hideAsync();
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

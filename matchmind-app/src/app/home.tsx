@@ -95,6 +95,11 @@ export default function HomeScreen() {
   const [resultFilter, setResultFilter] = useState<ResultFilter>('All');
   const [setsFilter, setSetsFilter] = useState<SetsFilter>('All');
   const [playstyleFilter, setPlaystyleFilter] = useState<Playstyle | 'All'>('All');
+  // Collapsed by default — three rows of filter chips plus the nudge and
+  // search bar filled the entire screen before a single match was visible,
+  // which read as "broken" (you had to scroll past everything just to see
+  // there were any matches at all).
+  const [showFilters, setShowFilters] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -125,8 +130,9 @@ export default function HomeScreen() {
     return true;
   });
 
-  const hasActiveFilters =
-    !!filter.trim() || resultFilter !== 'All' || setsFilter !== 'All' || playstyleFilter !== 'All';
+  const activeFilterCount =
+    (resultFilter !== 'All' ? 1 : 0) + (setsFilter !== 'All' ? 1 : 0) + (playstyleFilter !== 'All' ? 1 : 0);
+  const hasActiveFilters = !!filter.trim() || activeFilterCount > 0;
 
   function clearFilters() {
     setFilter('');
@@ -135,90 +141,116 @@ export default function HomeScreen() {
     setPlaystyleFilter('All');
   }
 
+  const listHeader = (
+    <ThemedView style={styles.header}>
+      {nudge ? (
+        <Card tint="accent">
+          <ThemedView style={styles.nudgeHeaderRow}>
+            <Ionicons name="flash" size={16} color={theme.primary} />
+            <ThemedText type="smallBold">Practice nudge</ThemedText>
+          </ThemedView>
+          <ThemedText>{nudge.patternDescription}</ThemedText>
+          <Pressable style={styles.linkRow} onPress={() => router.push('/practice')}>
+            <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
+              See drill
+            </ThemedText>
+            <Ionicons name="chevron-forward" size={14} color={theme.primary} />
+          </Pressable>
+        </Card>
+      ) : null}
+
+      <ThemedText type="smallBold" style={styles.filterLabel}>
+        Search for opponent
+      </ThemedText>
+      <ThemedView
+        style={[
+          styles.searchRow,
+          { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+        ]}
+      >
+        <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
+        <TextInput
+          style={[styles.filterInput, { color: theme.text }]}
+          placeholder="Type an opponent's name..."
+          placeholderTextColor={theme.textSecondary}
+          value={filter}
+          onChangeText={setFilter}
+        />
+        {filter ? (
+          <Pressable onPress={() => setFilter('')} hitSlop={8}>
+            <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+      </ThemedView>
+
+      <Pressable
+        onPress={() => setShowFilters((v) => !v)}
+        style={[styles.filterToggle, { borderColor: theme.border }]}
+        hitSlop={8}
+      >
+        <Ionicons name="options-outline" size={16} color={theme.text} />
+        <ThemedText type="smallBold">
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+        </ThemedText>
+        <Ionicons
+          name={showFilters ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color={theme.textSecondary}
+        />
+      </Pressable>
+
+      {showFilters ? (
+        <>
+          <ThemedView style={styles.filterGroupsRow}>
+            <FilterGroup
+              label="Result"
+              options={RESULT_OPTIONS.map((v) => ({ value: v, label: v }))}
+              value={resultFilter}
+              onChange={setResultFilter}
+            />
+            <FilterGroup
+              label="Match length"
+              options={SETS_OPTIONS}
+              value={setsFilter}
+              onChange={setSetsFilter}
+            />
+          </ThemedView>
+          <FilterGroup
+            label="Opponent playstyle"
+            options={[{ value: 'All' as const, label: 'All' }, ...PLAYSTYLES.map((p) => ({ value: p, label: p }))]}
+            value={playstyleFilter}
+            onChange={setPlaystyleFilter}
+          />
+
+          {hasActiveFilters ? (
+            <Pressable
+              onPress={clearFilters}
+              style={[styles.clearFiltersRow, { borderColor: theme.danger }]}
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={18} color={theme.danger} />
+              <ThemedText type="smallBold" style={{ color: theme.danger }}>
+                Clear filters
+              </ThemedText>
+            </Pressable>
+          ) : null}
+        </>
+      ) : null}
+    </ThemedView>
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ThemedView style={styles.container}>
-        {nudge ? (
-          <Card tint="accent">
-            <ThemedView style={styles.nudgeHeaderRow}>
-              <Ionicons name="flash" size={16} color={theme.primary} />
-              <ThemedText type="smallBold">Practice nudge</ThemedText>
-            </ThemedView>
-            <ThemedText>{nudge.patternDescription}</ThemedText>
-            <Pressable style={styles.linkRow} onPress={() => router.push('/practice')}>
-              <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
-                See drill
-              </ThemedText>
-              <Ionicons name="chevron-forward" size={14} color={theme.primary} />
-            </Pressable>
-          </Card>
-        ) : null}
-
-        <ThemedText type="smallBold" style={styles.filterLabel}>
-          Search for opponent
-        </ThemedText>
-        <ThemedView
-          style={[
-            styles.searchRow,
-            { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-          ]}
-        >
-          <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
-          <TextInput
-            style={[styles.filterInput, { color: theme.text }]}
-            placeholder="Type an opponent's name..."
-            placeholderTextColor={theme.textSecondary}
-            value={filter}
-            onChangeText={setFilter}
-          />
-          {filter ? (
-            <Pressable onPress={() => setFilter('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
-            </Pressable>
-          ) : null}
-        </ThemedView>
-
-        <ThemedText type="smallBold" style={styles.filterLabel}>
-          Filter
-        </ThemedText>
-        <ThemedView style={styles.filterGroupsRow}>
-          <FilterGroup
-            label="Result"
-            options={RESULT_OPTIONS.map((v) => ({ value: v, label: v }))}
-            value={resultFilter}
-            onChange={setResultFilter}
-          />
-          <FilterGroup
-            label="Match length"
-            options={SETS_OPTIONS}
-            value={setsFilter}
-            onChange={setSetsFilter}
-          />
-        </ThemedView>
-        <FilterGroup
-          label="Opponent playstyle"
-          options={[{ value: 'All' as const, label: 'All' }, ...PLAYSTYLES.map((p) => ({ value: p, label: p }))]}
-          value={playstyleFilter}
-          onChange={setPlaystyleFilter}
-        />
-
-        {hasActiveFilters ? (
-          <Pressable
-            onPress={clearFilters}
-            style={[styles.clearFiltersRow, { borderColor: theme.danger }]}
-            hitSlop={8}
-          >
-            <Ionicons name="close-circle" size={18} color={theme.danger} />
-            <ThemedText type="smallBold" style={{ color: theme.danger }}>
-              Clear filters
-            </ThemedText>
-          </Pressable>
-        ) : null}
-
         <FlatList
           data={filtered}
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.listContent}
+          // The search bar, filters, and practice nudge scroll away with the
+          // list instead of staying pinned above it — pinning them squeezed
+          // the actual match rows into a tiny, separately-scrolling sliver
+          // of the page (the "only shows one match" bug).
+          ListHeaderComponent={listHeader}
           ListFooterComponent={<Copyright />}
           ListEmptyComponent={
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
@@ -280,8 +312,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
-    gap: Spacing.three,
   },
+  header: { gap: Spacing.three, paddingBottom: Spacing.three },
   nudgeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   filterLabel: { marginBottom: -Spacing.one },
@@ -297,6 +329,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: Spacing.two,
     fontSize: 16,
+  },
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
   },
   filterGroupsRow: {
     flexDirection: 'row',
