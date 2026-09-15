@@ -22,6 +22,10 @@ interface TypeOrDictateFieldProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   multiline?: boolean;
+  // Set after a failed save attempt on a required-but-empty field — clears
+  // itself the moment the field has content, since it's re-derived from
+  // current state on every render rather than a one-time flag.
+  error?: boolean;
 }
 
 export function TypeOrDictateField({
@@ -29,6 +33,7 @@ export function TypeOrDictateField({
   onChangeText,
   placeholder,
   multiline,
+  error,
 }: TypeOrDictateFieldProps) {
   const theme = useTheme();
   const [listening, setListening] = useState(false);
@@ -70,8 +75,8 @@ export function TypeOrDictateField({
           styles.input,
           multiline && styles.multiline,
           {
-            borderColor: focused ? theme.primary : theme.border,
-            borderWidth: focused ? 2 : 1,
+            borderColor: error ? theme.danger : focused ? theme.primary : theme.border,
+            borderWidth: focused || error ? 2 : 1,
             color: theme.text,
             backgroundColor: theme.backgroundElement,
           },

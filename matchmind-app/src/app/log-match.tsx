@@ -58,6 +58,10 @@ export default function LogMatchScreen() {
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedMatchId, setSavedMatchId] = useState<string | null>(null);
+  // Only turns on once someone actually tries to save — the form doesn't
+  // shout "required!" at a blank page you just opened, only once you've
+  // told it you think you're done and it disagrees.
+  const [showValidation, setShowValidation] = useState(false);
 
   async function loadOpponent(id: string) {
     if (!playerId) return;
@@ -116,6 +120,10 @@ export default function LogMatchScreen() {
   }
 
   async function handleSave() {
+    if (!canSave) {
+      setShowValidation(true);
+      return;
+    }
     if (!playerId || !opponent || !result) return;
     setSaving(true);
     setSaveError('');
@@ -182,6 +190,20 @@ export default function LogMatchScreen() {
     wentWell.trim().length > 0 &&
     toImprove.trim().length > 0;
 
+  // Re-derived every render from current state, not a one-time snapshot —
+  // so a field's red highlight clears itself the instant it's filled in,
+  // rather than needing another save attempt to notice.
+  const opponentError = showValidation && !opponent;
+  const set1Error = showValidation && formatSetScore(sets[0]).length === 0;
+  const set2Error = showValidation && formatSetScore(sets[1]).length === 0;
+  const resultError = showValidation && !result;
+  const forehandError = showValidation && !scoutForehand.trim();
+  const serveError = showValidation && !scoutServe.trim();
+  const backhandError = showValidation && !scoutBackhand.trim();
+  const mentalError = showValidation && !scoutMental.trim();
+  const wentWellError = showValidation && !wentWell.trim();
+  const toImproveError = showValidation && !toImprove.trim();
+
   if (savedMatchId) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -222,7 +244,11 @@ export default function LogMatchScreen() {
             <RequiredMark color={theme.danger} />
           </ThemedText>
           <Pressable
-            style={[styles.opponentPicker, { borderColor: theme.border, backgroundColor: theme.background }]}
+            style={[
+              styles.opponentPicker,
+              { borderColor: opponentError ? theme.danger : theme.border, backgroundColor: theme.background },
+              opponentError && styles.errorBorderWidth,
+            ]}
             onPress={() => !isEditing && router.push('/select-opponent?mode=pick')}
             disabled={isEditing}
           >
@@ -238,6 +264,11 @@ export default function LogMatchScreen() {
               </ThemedView>
             )}
           </Pressable>
+          {opponentError ? (
+            <ThemedText type="small" style={[styles.fieldSpacing, { color: theme.danger }]}>
+              Pick an opponent before saving.
+            </ThemedText>
+          ) : null}
           {isEditing ? (
             <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
               Opponent can&apos;t be changed on an existing match.
@@ -256,9 +287,15 @@ export default function LogMatchScreen() {
                 label={`Set ${i + 1}`}
                 value={s}
                 onChange={(v) => updateSet(i, v)}
+                error={i === 0 ? set1Error : i === 1 ? set2Error : false}
               />
             ))}
           </ThemedView>
+          {set1Error || set2Error ? (
+            <ThemedText type="small" style={{ color: theme.danger }}>
+              Sets 1 and 2 need a score before saving.
+            </ThemedText>
+          ) : null}
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Result
             <RequiredMark color={theme.danger} />
@@ -270,8 +307,16 @@ export default function LogMatchScreen() {
                 onPress={() => setResult(r)}
                 style={({ pressed }) => [
                   styles.resultChip,
+                  resultError && styles.errorBorderWidth,
                   {
-                    borderColor: result === r ? (r === 'Win' ? theme.success : theme.danger) : theme.border,
+                    borderColor:
+                      result === r
+                        ? r === 'Win'
+                          ? theme.success
+                          : theme.danger
+                        : resultError
+                          ? theme.danger
+                          : theme.border,
                     backgroundColor: result === r ? (r === 'Win' ? theme.success : theme.danger) : 'transparent',
                     opacity: pressed ? 0.8 : 1,
                     transform: [{ scale: pressed ? 0.96 : 1 }],
@@ -284,6 +329,11 @@ export default function LogMatchScreen() {
               </Pressable>
             ))}
           </ThemedView>
+          {resultError ? (
+            <ThemedText type="small" style={{ color: theme.danger }}>
+              Select Win or Loss before saving.
+            </ThemedText>
+          ) : null}
 
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Playstyle
@@ -304,6 +354,7 @@ export default function LogMatchScreen() {
             value={scoutForehand}
             onChangeText={setScoutForehand}
             placeholder="e.g. strong but not consistent"
+            error={forehandError}
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Serve
@@ -313,6 +364,7 @@ export default function LogMatchScreen() {
             value={scoutServe}
             onChangeText={setScoutServe}
             placeholder="e.g. big serve, lots of kick"
+            error={serveError}
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Backhand
@@ -322,6 +374,7 @@ export default function LogMatchScreen() {
             value={scoutBackhand}
             onChangeText={setScoutBackhand}
             placeholder="e.g. weak, just makes it back"
+            error={backhandError}
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Mental
@@ -331,6 +384,7 @@ export default function LogMatchScreen() {
             value={scoutMental}
             onChangeText={setScoutMental}
             placeholder="e.g. easily gets angry, tightens up on big points"
+            error={mentalError}
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Other (optional)
@@ -355,6 +409,7 @@ export default function LogMatchScreen() {
             value={wentWell}
             onChangeText={setWentWell}
             placeholder="e.g. forehand was on"
+            error={wentWellError}
           />
           <ThemedView style={[styles.cardHeaderRow, styles.fieldSpacing]}>
             <Ionicons name="trending-up-outline" size={16} color={theme.text} />
@@ -367,6 +422,7 @@ export default function LogMatchScreen() {
             value={toImprove}
             onChangeText={setToImprove}
             placeholder="e.g. backhand, second serve"
+            error={toImproveError}
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
             This feeds your automatic practice tips.
@@ -388,13 +444,13 @@ export default function LogMatchScreen() {
           label={saving ? 'Saving...' : isEditing ? 'Save changes' : 'Save match'}
           icon={saving ? undefined : 'checkmark-circle-outline'}
           onPress={handleSave}
-          disabled={!canSave || saving}
+          disabled={saving}
           size="large"
           fullWidth
         />
-        {!canSave ? (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-            Everything marked * is required — only Other under Scout your opponent is optional.
+        {showValidation && !canSave ? (
+          <ThemedText type="small" style={{ color: theme.danger }}>
+            Fill in the highlighted fields above before saving.
           </ThemedText>
         ) : null}
         <Copyright />
@@ -420,6 +476,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
+  errorBorderWidth: { borderWidth: 2 },
   opponentRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
