@@ -1,11 +1,18 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Copyright } from '@/components/copyright';
 import { PlaystylePicker } from '@/components/playstyle-picker';
+import {
+  emptySetScore,
+  formatSetScore,
+  parseSetScore,
+  SetScoreInput,
+  type SetScore,
+} from '@/components/set-score-input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TypeOrDictateField } from '@/components/type-or-dictate-input';
@@ -18,6 +25,13 @@ import { getMatch, getOpponent, saveMatch, upsertOpponent } from '@/data/storage
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
+// A small red asterisk after a label — every required field gets one except
+// Scout your opponent's "Other", the one field that's still genuinely
+// optional.
+function RequiredMark({ color }: { color: string }) {
+  return <ThemedText style={{ color }}> *</ThemedText>;
+}
+
 export default function LogMatchScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -27,7 +41,7 @@ export default function LogMatchScreen() {
 
   const [opponent, setOpponent] = useState<Opponent | null>(null);
   const [playstyle, setPlaystyle] = useState<Playstyle | null>(null);
-  const [sets, setSets] = useState(['', '', '']);
+  const [sets, setSets] = useState<SetScore[]>([emptySetScore(), emptySetScore(), emptySetScore()]);
   const [result, setResult] = useState<MatchResult | null>(null);
   // Preserved from the original record when editing, unchanged by this form.
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
@@ -65,7 +79,7 @@ export default function LogMatchScreen() {
     const o = await getOpponent(playerId, m.opponentId);
     setOpponent(o);
     setPlaystyle(m.playstyleSnapshot);
-    setSets([...m.score, '', '', ''].slice(0, 3));
+    setSets([0, 1, 2].map((i) => parseSetScore(m.score[i] ?? '')));
     setResult(m.result);
     setScoutForehand(m.scoutingNotes?.forehand ?? '');
     setScoutServe(m.scoutingNotes?.serve ?? '');
@@ -97,7 +111,7 @@ export default function LogMatchScreen() {
     }, [playerId])
   );
 
-  function updateSet(index: number, value: string) {
+  function updateSet(index: number, value: SetScore) {
     setSets((prev) => prev.map((s, i) => (i === index ? value : s)));
   }
 
@@ -117,7 +131,7 @@ export default function LogMatchScreen() {
         // the separate "Match notes" free-text field, which lives on Match
         // Detail, not this form.
         date: editingMatch?.date ?? new Date().toISOString(),
-        score: sets.filter((s) => s.trim().length > 0),
+        score: sets.map(formatSetScore).filter((s) => s.length > 0),
         result,
         playstyleSnapshot: finalPlaystyle,
         scoutingNotes: {
@@ -152,7 +166,21 @@ export default function LogMatchScreen() {
     }
   }
 
-  const canSave = !!opponent && !!result;
+  // Everything is required except the scouting "Other" field — logging just
+  // the score without any of the actual scouting/reflection defeated the
+  // point of keeping a match journal at all, so this form now insists on
+  // the parts that make it one.
+  const canSave =
+    !!opponent &&
+    !!result &&
+    formatSetScore(sets[0]).length > 0 &&
+    formatSetScore(sets[1]).length > 0 &&
+    scoutForehand.trim().length > 0 &&
+    scoutServe.trim().length > 0 &&
+    scoutBackhand.trim().length > 0 &&
+    scoutMental.trim().length > 0 &&
+    wentWell.trim().length > 0 &&
+    toImprove.trim().length > 0;
 
   if (savedMatchId) {
     return (
@@ -176,12 +204,6 @@ export default function LogMatchScreen() {
     );
   }
 
-  const inputStyle = {
-    borderColor: theme.border,
-    color: theme.text,
-    backgroundColor: theme.background,
-  };
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -195,7 +217,10 @@ export default function LogMatchScreen() {
         </ThemedText>
 
         <Card>
-          <ThemedText type="smallBold">Opponent</ThemedText>
+          <ThemedText type="smallBold">
+            Opponent
+            <RequiredMark color={theme.danger} />
+          </ThemedText>
           <Pressable
             style={[styles.opponentPicker, { borderColor: theme.border, backgroundColor: theme.background }]}
             onPress={() => !isEditing && router.push('/select-opponent?mode=pick')}
@@ -221,19 +246,23 @@ export default function LogMatchScreen() {
 
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Score
+            <RequiredMark color={theme.danger} />
+            <ThemedText type="small" themeColor="textSecondary"> (set 3 optional — type one side, the other fills in)</ThemedText>
           </ThemedText>
-          <ThemedView style={styles.setsRow}>
+          <ThemedView style={styles.setsColumn}>
             {sets.map((s, i) => (
-              <TextInput
+              <SetScoreInput
                 key={i}
-                style={[styles.setInput, inputStyle]}
-                placeholder={`Set ${i + 1}`}
-                placeholderTextColor={theme.textSecondary}
+                label={`Set ${i + 1}`}
                 value={s}
-                onChangeText={(v) => updateSet(i, v)}
+                onChange={(v) => updateSet(i, v)}
               />
             ))}
           </ThemedView>
+          <ThemedText type="smallBold" style={styles.fieldSpacing}>
+            Result
+            <RequiredMark color={theme.danger} />
+          </ThemedText>
           <ThemedView style={styles.resultRow}>
             {(['Win', 'Loss'] as const).map((r) => (
               <Pressable
@@ -267,7 +296,10 @@ export default function LogMatchScreen() {
             <Ionicons name="eye-outline" size={16} color={theme.text} />
             <ThemedText type="smallBold">Scout your opponent</ThemedText>
           </ThemedView>
-          <ThemedText type="small" themeColor="textSecondary">Forehand</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Forehand
+            <RequiredMark color={theme.danger} />
+          </ThemedText>
           <TypeOrDictateField
             value={scoutForehand}
             onChangeText={setScoutForehand}
@@ -275,6 +307,7 @@ export default function LogMatchScreen() {
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Serve
+            <RequiredMark color={theme.danger} />
           </ThemedText>
           <TypeOrDictateField
             value={scoutServe}
@@ -283,6 +316,7 @@ export default function LogMatchScreen() {
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Backhand
+            <RequiredMark color={theme.danger} />
           </ThemedText>
           <TypeOrDictateField
             value={scoutBackhand}
@@ -291,6 +325,7 @@ export default function LogMatchScreen() {
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
             Mental
+            <RequiredMark color={theme.danger} />
           </ThemedText>
           <TypeOrDictateField
             value={scoutMental}
@@ -298,7 +333,7 @@ export default function LogMatchScreen() {
             placeholder="e.g. easily gets angry, tightens up on big points"
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-            Other
+            Other (optional)
           </ThemedText>
           <TypeOrDictateField
             value={scoutOther}
@@ -311,7 +346,10 @@ export default function LogMatchScreen() {
           <ThemedText type="smallBold">Your game this match</ThemedText>
           <ThemedView style={styles.cardHeaderRow}>
             <Ionicons name="checkmark-circle-outline" size={16} color={theme.success} />
-            <ThemedText type="small">What I did well</ThemedText>
+            <ThemedText type="small">
+              What I did well
+              <RequiredMark color={theme.danger} />
+            </ThemedText>
           </ThemedView>
           <TypeOrDictateField
             value={wentWell}
@@ -320,7 +358,10 @@ export default function LogMatchScreen() {
           />
           <ThemedView style={[styles.cardHeaderRow, styles.fieldSpacing]}>
             <Ionicons name="trending-up-outline" size={16} color={theme.text} />
-            <ThemedText type="small">What to improve</ThemedText>
+            <ThemedText type="small">
+              What to improve
+              <RequiredMark color={theme.danger} />
+            </ThemedText>
           </ThemedView>
           <TypeOrDictateField
             value={toImprove}
@@ -353,7 +394,7 @@ export default function LogMatchScreen() {
         />
         {!canSave ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-            Opponent and win/loss are required — everything else is optional.
+            Everything marked * is required — only Other under Scout your opponent is optional.
           </ThemedText>
         ) : null}
         <Copyright />
@@ -383,14 +424,7 @@ const styles = StyleSheet.create({
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   fieldSpacing: { marginTop: Spacing.two },
-  setsRow: { flexDirection: 'row', gap: Spacing.one },
-  setInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: Radius.small,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
-  },
+  setsColumn: { gap: Spacing.two },
   resultRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.one },
   resultChip: {
     borderWidth: 1.5,
