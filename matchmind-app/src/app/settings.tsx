@@ -14,6 +14,7 @@ import type { Player } from '@/data/models';
 import { clearCurrentPlayerId, deletePlayer, getPlayer, savePlayer } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
+import { supabase } from '@/lib/supabase';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -58,10 +59,6 @@ export default function SettingsScreen() {
     setChangePasswordError('');
     setChangePasswordSuccess('');
     if (!player) return;
-    if (currentPassword !== player.password) {
-      setChangePasswordError('Current password is incorrect.');
-      return;
-    }
     if (newPassword.length < 6) {
       setChangePasswordError('New password must be at least 6 characters.');
       return;
@@ -70,9 +67,23 @@ export default function SettingsScreen() {
       setChangePasswordError("New passwords don't match.");
       return;
     }
-    const updated = { ...player, password: newPassword };
-    setPlayer(updated);
-    await savePlayer(updated);
+    // Re-verify the current password by signing in with it again — proves
+    // it's really you before Supabase accepts the change, same guarantee
+    // the old direct comparison gave, just checked server-side now instead
+    // of against a plaintext value sitting in local storage.
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+      email: player.email,
+      password: currentPassword,
+    });
+    if (reauthError) {
+      setChangePasswordError('Current password is incorrect.');
+      return;
+    }
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) {
+      setChangePasswordError(updateError.message);
+      return;
+    }
     setCurrentPassword('');
     setNewPassword('');
     setConfirmNewPassword('');
@@ -148,6 +159,12 @@ export default function SettingsScreen() {
               placeholder="••••••"
               placeholderTextColor={theme.textSecondary}
               secureTextEntry
+              // Deliberately NOT "current-password" — that's the exact
+              // signal that invites the browser to auto-fill the saved
+              // password here, which defeats the point of asking the user
+              // to type it themselves as a live confirmation it's really them.
+              autoComplete="off"
+              textContentType="none"
               value={currentPassword}
               onChangeText={setCurrentPassword}
             />

@@ -13,7 +13,8 @@ export type Playstyle = (typeof PLAYSTYLES)[number];
 export interface Player {
   id: string;
   email: string;
-  password: string;
+  // No password field — Supabase Auth owns credentials entirely (hashed,
+  // server-side, never sent to or stored by the client). See lib/supabase.ts.
   settings: {
     practiceNudgesEnabled: boolean;
     logReminderEnabled: boolean;

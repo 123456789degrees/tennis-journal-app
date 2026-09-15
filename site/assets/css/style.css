@@ -46,10 +46,18 @@ body {
   gap: 12px;
 }
 .site-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--primary-text);
   font-weight: 800;
   font-size: 1.25rem;
   text-decoration: none;
+}
+.site-header .brand-logo {
+  height: 36px;
+  width: 36px;
+  border-radius: 9px;
 }
 .site-header nav {
   display: flex;

@@ -1,137 +1,120 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "@/lib/supabase";
 import type { Match, Opponent, Player, PracticeInsight, VideoFeedback } from "./models";
 
-// Private/personal data model — everything is namespaced under the current
-// player's id, and there is no cross-player read path anywhere in this file.
-const KEYS = {
-  currentPlayerId: "matchmind:currentPlayerId",
-  allPlayerIds: "matchmind:allPlayerIds",
-  player: (id: string) => `matchmind:player:${id}`,
-  opponents: (playerId: string) => `matchmind:opponents:${playerId}`,
-  matches: (playerId: string) => `matchmind:matches:${playerId}`,
-  insights: (playerId: string) => `matchmind:insights:${playerId}`,
-  lastAnalyzedMatchId: (playerId: string) => `matchmind:lastAnalyzedMatchId:${playerId}`,
-  videoFeedback: (playerId: string) => `matchmind:videoFeedback:${playerId}`,
-};
+// Real accounts now — every read/write here goes to Supabase (Postgres +
+// Auth), not just this one browser's local storage, so the same account
+// works from any device. Row-level security (see supabase/schema.sql)
+// enforces "no cross-player read path anywhere," same guarantee the old
+// AsyncStorage version had by construction, now enforced server-side.
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-async function readJson<T>(key: string, fallback: T): Promise<T> {
-  const raw = await AsyncStorage.getItem(key);
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+function throwIfError<T>({ data, error }: { data: T; error: { message: string } | null }): T {
+  if (error) throw new Error(error.message);
+  return data;
 }
 
-async function writeJson<T>(key: string, value: T): Promise<void> {
-  await AsyncStorage.setItem(key, JSON.stringify(value));
-}
+const DEFAULT_SETTINGS = { practiceNudgesEnabled: true, logReminderEnabled: true };
 
 // --- Session ---
 
 export async function getCurrentPlayerId(): Promise<string | null> {
-  return AsyncStorage.getItem(KEYS.currentPlayerId);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
 }
 
-export async function setCurrentPlayerId(id: string): Promise<void> {
-  await AsyncStorage.setItem(KEYS.currentPlayerId, id);
-}
-
+// Session is established by signIn/signUp themselves now (see login.tsx) —
+// there's no separate "which id is current" state to set by hand anymore.
 export async function clearCurrentPlayerId(): Promise<void> {
-  await AsyncStorage.removeItem(KEYS.currentPlayerId);
+  await supabase.auth.signOut();
 }
 
 // --- Player ---
 
-export async function getPlayer(id: string): Promise<Player | null> {
-  return readJson<Player | null>(KEYS.player(id), null);
+export async function getPlayer(_id: string): Promise<Player | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    settings: { ...DEFAULT_SETTINGS, ...(user.user_metadata as Partial<Player["settings"]>) },
+  };
 }
 
 export async function savePlayer(player: Player): Promise<void> {
-  await writeJson(KEYS.player(player.id), player);
+  const { error } = await supabase.auth.updateUser({ data: player.settings });
+  if (error) throw new Error(error.message);
 }
 
-async function getAllPlayerIds(): Promise<string[]> {
-  return readJson<string[]>(KEYS.allPlayerIds, []);
-}
-
-// Deletes one account and everything under it. Destructive and irreversible —
-// used by Settings' "Delete account" control.
-export async function deletePlayer(playerId: string): Promise<void> {
-  await Promise.all([
-    AsyncStorage.removeItem(KEYS.player(playerId)),
-    AsyncStorage.removeItem(KEYS.opponents(playerId)),
-    AsyncStorage.removeItem(KEYS.matches(playerId)),
-    AsyncStorage.removeItem(KEYS.insights(playerId)),
-    AsyncStorage.removeItem(KEYS.videoFeedback(playerId)),
-  ]);
-  const ids = await getAllPlayerIds();
-  await writeJson(
-    KEYS.allPlayerIds,
-    ids.filter((id) => id !== playerId)
-  );
-  const currentId = await getCurrentPlayerId();
-  if (currentId === playerId) {
-    await AsyncStorage.removeItem(KEYS.currentPlayerId);
+// Deletes the account and everything under it (opponents/matches/insights/
+// video feedback all cascade via their foreign keys — see schema.sql). A
+// user can't delete their own auth account from the client SDK, so this
+// calls a small server-side endpoint that holds the service-role key.
+export async function deletePlayer(_playerId: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return;
+  const res = await fetch("/api/delete-account", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to delete account.");
   }
-}
-
-export async function findPlayerByEmail(email: string): Promise<Player | null> {
-  const ids = await getAllPlayerIds();
-  const players = await Promise.all(ids.map((id) => getPlayer(id)));
-  return (
-    players.find(
-      (p): p is Player =>
-        !!p && p.email.toLowerCase() === email.toLowerCase()
-    ) ?? null
-  );
+  await supabase.auth.signOut();
 }
 
 export async function createPlayer(input: {
   email: string;
   password: string;
 }): Promise<Player> {
-  const player: Player = {
-    id: newId(),
+  const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
-    settings: { practiceNudgesEnabled: true, logReminderEnabled: true },
-  };
-  await savePlayer(player);
-  const ids = await getAllPlayerIds();
-  await writeJson(KEYS.allPlayerIds, [...ids, player.id]);
-  await setCurrentPlayerId(player.id);
-  return player;
+    options: { data: DEFAULT_SETTINGS },
+  });
+  if (error) throw new Error(error.message);
+  if (!data.user) throw new Error("Sign-up did not return a user.");
+  return { id: data.user.id, email: data.user.email ?? input.email, settings: DEFAULT_SETTINGS };
 }
 
 // --- Opponents ---
 
 export async function listOpponents(playerId: string): Promise<Opponent[]> {
-  return readJson<Opponent[]>(KEYS.opponents(playerId), []);
+  return throwIfError(
+    await supabase.from("opponents").select("*").eq("ownerPlayerId", playerId)
+  ) as Opponent[];
 }
 
 export async function getOpponent(
   playerId: string,
   opponentId: string
 ): Promise<Opponent | null> {
-  const all = await listOpponents(playerId);
-  return all.find((o) => o.id === opponentId) ?? null;
+  return throwIfError(
+    await supabase
+      .from("opponents")
+      .select("*")
+      .eq("ownerPlayerId", playerId)
+      .eq("id", opponentId)
+      .maybeSingle()
+  ) as Opponent | null;
 }
 
 export async function upsertOpponent(
   playerId: string,
   opponent: Opponent
 ): Promise<void> {
-  const all = await listOpponents(playerId);
-  const idx = all.findIndex((o) => o.id === opponent.id);
-  if (idx >= 0) all[idx] = opponent;
-  else all.push(opponent);
-  await writeJson(KEYS.opponents(playerId), all);
+  throwIfError(
+    await supabase.from("opponents").upsert({ ...opponent, ownerPlayerId: playerId })
+  );
 }
 
 export async function createOpponent(
@@ -154,54 +137,70 @@ export async function createOpponent(
 // --- Matches ---
 
 export async function listMatches(playerId: string): Promise<Match[]> {
-  const all = await readJson<Match[]>(KEYS.matches(playerId), []);
-  return [...all].sort((a, b) => (a.date < b.date ? 1 : -1));
+  return throwIfError(
+    await supabase
+      .from("matches")
+      .select("*")
+      .eq("ownerPlayerId", playerId)
+      .order("date", { ascending: false })
+  ) as Match[];
 }
 
 export async function listMatchesForOpponent(
   playerId: string,
   opponentId: string
 ): Promise<Match[]> {
-  const all = await listMatches(playerId);
-  return all.filter((m) => m.opponentId === opponentId);
+  return throwIfError(
+    await supabase
+      .from("matches")
+      .select("*")
+      .eq("ownerPlayerId", playerId)
+      .eq("opponentId", opponentId)
+      .order("date", { ascending: false })
+  ) as Match[];
 }
 
 export async function getMatch(
   playerId: string,
   matchId: string
 ): Promise<Match | null> {
-  const all = await listMatches(playerId);
-  return all.find((m) => m.id === matchId) ?? null;
+  return throwIfError(
+    await supabase
+      .from("matches")
+      .select("*")
+      .eq("ownerPlayerId", playerId)
+      .eq("id", matchId)
+      .maybeSingle()
+  ) as Match | null;
 }
 
 export async function saveMatch(playerId: string, match: Match): Promise<void> {
-  const all = await readJson<Match[]>(KEYS.matches(playerId), []);
-  const idx = all.findIndex((m) => m.id === match.id);
-  if (idx >= 0) all[idx] = match;
-  else all.push(match);
-  await writeJson(KEYS.matches(playerId), all);
+  throwIfError(await supabase.from("matches").upsert({ ...match, ownerPlayerId: playerId }));
 }
 
 export async function deleteMatch(
   playerId: string,
   matchId: string
 ): Promise<void> {
-  const all = await readJson<Match[]>(KEYS.matches(playerId), []);
-  await writeJson(
-    KEYS.matches(playerId),
-    all.filter((m) => m.id !== matchId)
+  throwIfError(
+    await supabase.from("matches").delete().eq("ownerPlayerId", playerId).eq("id", matchId)
   );
 }
 
-export async function getLastAnalyzedMatchId(playerId: string): Promise<string | null> {
-  return AsyncStorage.getItem(KEYS.lastAnalyzedMatchId(playerId));
+export async function getLastAnalyzedMatchId(_playerId: string): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const meta = user?.user_metadata as { lastAnalyzedMatchId?: string } | undefined;
+  return meta?.lastAnalyzedMatchId ?? null;
 }
 
 export async function setLastAnalyzedMatchId(
   playerId: string,
   matchId: string
 ): Promise<void> {
-  await AsyncStorage.setItem(KEYS.lastAnalyzedMatchId(playerId), matchId);
+  const { error } = await supabase.auth.updateUser({ data: { lastAnalyzedMatchId: matchId } });
+  if (error) throw new Error(error.message);
 }
 
 // --- Practice insights ---
@@ -209,43 +208,49 @@ export async function setLastAnalyzedMatchId(
 export async function listInsights(
   playerId: string
 ): Promise<PracticeInsight[]> {
-  return readJson<PracticeInsight[]>(KEYS.insights(playerId), []);
+  return throwIfError(
+    await supabase.from("practice_insights").select("*").eq("ownerPlayerId", playerId)
+  ) as PracticeInsight[];
 }
 
 export async function saveInsight(
   playerId: string,
   insight: PracticeInsight
 ): Promise<void> {
-  const all = await listInsights(playerId);
-  const idx = all.findIndex((i) => i.id === insight.id);
-  if (idx >= 0) all[idx] = insight;
-  else all.push(insight);
-  await writeJson(KEYS.insights(playerId), all);
+  throwIfError(
+    await supabase
+      .from("practice_insights")
+      .upsert({ ...insight, ownerPlayerId: playerId })
+  );
 }
 
 // --- Video feedback (per-video drill-video like/dislike) ---
 
 export async function listVideoFeedback(playerId: string): Promise<VideoFeedback[]> {
-  return readJson<VideoFeedback[]>(KEYS.videoFeedback(playerId), []);
+  return throwIfError(
+    await supabase.from("video_feedback").select("*").eq("ownerPlayerId", playerId)
+  ) as VideoFeedback[];
 }
 
 export async function saveVideoFeedback(
   playerId: string,
   feedback: VideoFeedback
 ): Promise<void> {
-  const all = await listVideoFeedback(playerId);
-  const idx = all.findIndex((f) => f.videoId === feedback.videoId);
-  if (idx >= 0) all[idx] = feedback;
-  else all.push(feedback);
-  await writeJson(KEYS.videoFeedback(playerId), all);
+  throwIfError(
+    await supabase
+      .from("video_feedback")
+      .upsert({ ...feedback, ownerPlayerId: playerId }, { onConflict: "ownerPlayerId,videoId" })
+  );
 }
 
 // Used by the Liked Videos screen's "remove" action — goes back to neutral
 // rather than flipping to disliked.
 export async function deleteVideoFeedback(playerId: string, videoId: string): Promise<void> {
-  const all = await listVideoFeedback(playerId);
-  await writeJson(
-    KEYS.videoFeedback(playerId),
-    all.filter((f) => f.videoId !== videoId)
+  throwIfError(
+    await supabase
+      .from("video_feedback")
+      .delete()
+      .eq("ownerPlayerId", playerId)
+      .eq("videoId", videoId)
   );
 }

@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { Radius, Spacing } from '@/constants/theme';
-import { createPlayer, findPlayerByEmail, setCurrentPlayerId } from '@/data/storage';
+import { createPlayer } from '@/data/storage';
 import { useTheme } from '@/hooks/use-theme';
+import { supabase } from '@/lib/supabase';
 
 type Mode = 'signin' | 'signup';
 
@@ -35,16 +36,14 @@ export default function LoginScreen() {
       setError('Enter your email and password.');
       return;
     }
-    const existing = await findPlayerByEmail(email);
-    if (!existing) {
-      setError('No account found with that email. Sign up instead.');
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      // Supabase deliberately doesn't say whether it was the email or the
+      // password that was wrong (that distinction is itself a way to probe
+      // which emails have accounts), so one generic message covers both.
+      setError('Incorrect email or password.');
       return;
     }
-    if (existing.password !== password) {
-      setError('Incorrect password.');
-      return;
-    }
-    await setCurrentPlayerId(existing.id);
     router.replace('/home');
   }
 
@@ -58,13 +57,17 @@ export default function LoginScreen() {
       setError('Password must be at least 6 characters.');
       return;
     }
-    const existing = await findPlayerByEmail(email);
-    if (existing) {
-      setError('An account with that email already exists. Sign in instead.');
-      return;
+    try {
+      await createPlayer({ email, password });
+      router.replace('/home');
+    } catch (e) {
+      const message = e instanceof Error ? e.message : '';
+      setError(
+        /registered|exists/i.test(message)
+          ? 'An account with that email already exists. Sign in instead.'
+          : message || 'Could not create account.'
+      );
     }
-    await createPlayer({ email, password });
-    router.replace('/home');
   }
 
   const inputStyle = {

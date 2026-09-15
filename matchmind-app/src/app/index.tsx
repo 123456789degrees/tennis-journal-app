@@ -4,12 +4,15 @@ import { ActivityIndicator } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { getCurrentPlayerId } from '@/data/storage';
+import { enforceInactivityTimeout } from '@/lib/session-activity';
 
 export default function Index() {
   const [destination, setDestination] = useState<'/login' | '/home' | null>(null);
 
   useEffect(() => {
-    getCurrentPlayerId().then((id) => setDestination(id ? '/home' : '/login'));
+    enforceInactivityTimeout().then(() => {
+      getCurrentPlayerId().then((id) => setDestination(id ? '/home' : '/login'));
+    });
   }, []);
 
   if (!destination) {
