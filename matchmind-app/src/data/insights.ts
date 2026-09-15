@@ -53,51 +53,93 @@ const RULES: KeywordRule[] = [
   },
 ];
 
-function describeHeuristic(label: string, matchingCount: number, recentCount: number): string {
-  if (recentCount === 1) return `Your ${label} came up in your last match.`;
-  if (matchingCount === 1) return `Your ${label} came up in a recent match.`;
-  return `Your ${label} got flagged in ${matchingCount} of your last ${recentCount} matches.`;
+// Shared by both the heuristic path (below) and the AI path (in
+// runAnalysis) — same "how often, how recent" framing either way, computed
+// here from actual indices rather than left to prose written by a rule or
+// a model, either of which can get the arithmetic subtly wrong.
+function evidenceClause(count: number, windowSize: number, mostRecentIndex: number): string {
+  if (mostRecentIndex === 0 && count === 1) return 'in your last match';
+  if (mostRecentIndex === 0) return `in ${count} of your last ${windowSize} matches, including your most recent one`;
+  if (count === 1) return 'in a recent match';
+  return `in ${count} of your last ${windowSize} matches`;
+}
+
+function describeHeuristic(label: string, matchingCount: number, recentCount: number, mostRecentIndex: number): string {
+  return `Your ${label} has come up ${evidenceClause(matchingCount, recentCount, mostRecentIndex)}.`;
+}
+
+// One practice nudge at a time, not a pile of them — and *which* one isn't
+// arbitrary: every rule that matches gets scored by how often it shows up
+// AND how recently, so "backhand broke down once three months ago" loses
+// to "footwork has been an issue in 3 of your last 4 matches, including
+// today's." `recent` is already most-recent-first (index 0 = latest), so a
+// match's weight is (recent.length - index) — the latest match is worth
+// the most, the oldest in the window worth the least — added up per rule
+// and combined with raw frequency so both factors actually count.
+function scoreRule(matchingIndices: number[], windowSize: number): number {
+  const frequency = matchingIndices.length;
+  const recencyWeight = matchingIndices.reduce((sum, idx) => sum + (windowSize - idx), 0);
+  return frequency * 100 + recencyWeight;
 }
 
 async function runHeuristic(
   playerId: string,
   recent: Match[],
-  // A passive refresh (a new match came in) only skips a label that's
-  // currently active — the same weakness showing up again in fresh match
-  // data is genuinely new evidence. A forced manual refresh (no new match,
-  // just asking for more) has no new evidence, so re-surfacing a label
-  // already shown at ANY point (dismissed or not) would just be a literal
-  // repeat — skip those too.
+  // A forced manual refresh (no new match, just asking for something else)
+  // has no new evidence to justify repeating itself, so it excludes every
+  // label ever shown before (dismissed or active) — a passive refresh (a
+  // new match just came in) only excludes nothing, since fresh match data
+  // is genuinely new evidence and the top-scored pattern is allowed to be
+  // the same one again if it's still, honestly, the biggest issue.
   excludeAnyPastLabel = false
 ): Promise<boolean> {
   const existing = await listInsights(playerId);
-  let addedAny = false;
+
+  let best: { rule: KeywordRule; matching: Match[]; indices: number[]; score: number } | null = null;
 
   for (const rule of RULES) {
-    const matching = recent.filter((m) => rule.keyword.test(m.selfReflection.whatToImprove));
+    const indices: number[] = [];
+    const matching: Match[] = [];
+    recent.forEach((m, i) => {
+      if (rule.keyword.test(m.selfReflection.whatToImprove)) {
+        indices.push(i);
+        matching.push(m);
+      }
+    });
     if (matching.length === 0) continue;
 
-    const alreadyShown = existing.some(
-      (i) =>
-        (excludeAnyPastLabel || i.status === 'active') &&
-        i.patternDescription.toLowerCase().includes(rule.label)
-    );
-    if (alreadyShown) continue;
+    if (excludeAnyPastLabel) {
+      const alreadyShown = existing.some((i) => i.patternDescription.toLowerCase().includes(rule.label));
+      if (alreadyShown) continue;
+    }
 
-    addedAny = true;
-    const insight: PracticeInsight = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      ownerPlayerId: playerId,
-      patternDescription: describeHeuristic(rule.label, matching.length, recent.length),
-      suggestedDrill: rule.drill,
-      drillSearchQuery: rule.searchQuery,
-      sourceMatchIds: matching.map((m) => m.id),
-      status: 'active',
-    };
-    await saveInsight(playerId, insight);
+    const score = scoreRule(indices, recent.length);
+    if (!best || score > best.score) {
+      best = { rule, matching, indices, score };
+    }
   }
 
-  return addedAny;
+  if (!best) return false;
+
+  // Always exactly one active nudge — whichever rule scored highest just
+  // now replaces whatever was active before, even if that happens to be
+  // the same rule again (still the single biggest issue) or a different
+  // one entirely (a bigger issue just overtook it).
+  await Promise.all(
+    existing.filter((i) => i.status === 'active').map((i) => saveInsight(playerId, { ...i, status: 'dismissed' }))
+  );
+
+  const insight: PracticeInsight = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    ownerPlayerId: playerId,
+    patternDescription: describeHeuristic(best.rule.label, best.matching.length, recent.length, Math.min(...best.indices)),
+    suggestedDrill: best.rule.drill,
+    drillSearchQuery: best.rule.searchQuery,
+    sourceMatchIds: best.matching.map((m) => m.id),
+    status: 'active',
+  };
+  await saveInsight(playerId, insight);
+  return true;
 }
 
 // --- Real AI path ---
@@ -106,6 +148,10 @@ interface AiPattern {
   pattern: string;
   drill: string;
   searchQuery: string;
+  // 1-indexed "Match N" numbers the model says support this pattern — see
+  // practice-tips+api.ts's prompt. Used to compute a verified evidence
+  // clause instead of trusting the model's own count/recency claims.
+  matchNumbers: number[];
 }
 
 async function fetchAiPatterns(
@@ -143,26 +189,46 @@ async function runAnalysis(
   const aiPatterns = await fetchAiPatterns(recent, excludePatterns);
 
   if (aiPatterns && aiPatterns.length > 0) {
-    // Fresh AI analysis supersedes the previous active nudges.
+    // One nudge at a time — the prompt already asks for the single
+    // most frequent + most recent weakness, but only ever act on the
+    // first result regardless, rather than trusting the model to have
+    // limited itself to one.
+    const top = aiPatterns[0];
+
+    // Convert the model's cited "Match N" numbers to real indices/ids, and
+    // build the evidence clause from those — not from any count the model
+    // itself wrote in "pattern". An empty/garbage list (model didn't
+    // comply) degrades gracefully to just the bare pattern sentence rather
+    // than breaking.
+    const validIndices = Array.from(
+      new Set(
+        (top.matchNumbers ?? [])
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= recent.length)
+          .map((n) => n - 1)
+      )
+    );
+    const sourceMatches = validIndices.length > 0 ? validIndices.map((i) => recent[i]) : recent;
+    const patternDescription =
+      validIndices.length > 0
+        ? `${top.pattern} This has come up ${evidenceClause(validIndices.length, recent.length, Math.min(...validIndices))}.`
+        : top.pattern;
+
+    // Fresh AI analysis supersedes the previous active nudge.
     const existing = await listInsights(playerId);
     await Promise.all(
       existing
         .filter((i) => i.status === 'active')
         .map((i) => saveInsight(playerId, { ...i, status: 'dismissed' }))
     );
-    await Promise.all(
-      aiPatterns.map((p) =>
-        saveInsight(playerId, {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          ownerPlayerId: playerId,
-          patternDescription: p.pattern,
-          suggestedDrill: p.drill,
-          drillSearchQuery: p.searchQuery,
-          sourceMatchIds: recent.map((m) => m.id),
-          status: 'active',
-        })
-      )
-    );
+    await saveInsight(playerId, {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      ownerPlayerId: playerId,
+      patternDescription,
+      suggestedDrill: top.drill,
+      drillSearchQuery: top.searchQuery,
+      sourceMatchIds: sourceMatches.map((m) => m.id),
+      status: 'active',
+    });
     return true;
   }
 
