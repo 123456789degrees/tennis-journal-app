@@ -8,7 +8,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!_expo/|assets/|favicon\\.ico|api/).*)",
+      "source": "/((?!_expo/|assets/|favicon\\.ico|api/delete-account).*)",
       "destination": "/api/index"
     }
   ]

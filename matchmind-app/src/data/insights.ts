@@ -13,45 +13,132 @@ const LOOKBACK = 8;
 // Used when OPENROUTER_API_KEY isn't configured, or the API call fails —
 // keeps the practice nudge working even with no AI wired up. See
 // src/app/api/practice-tips+api.ts for the real AI path.
+//
+// A stroke name alone ("forehand") isn't enough to pick a relevant drill —
+// "my forehand has no power" and "my forehand keeps missing" are different
+// problems needing different practice, and handing both the same canned
+// "consistency" drill just because they both mention "forehand" is exactly
+// the kind of irrelevant suggestion this is meant to avoid. Each stroke
+// below lists qualifier variants checked against the SAME note text, in
+// order, before falling back to a generic default.
+interface DrillVariant {
+  keyword: RegExp;
+  drill: string;
+  searchQuery: string;
+}
+
 interface KeywordRule {
   keyword: RegExp;
   label: string;
-  drill: string;
-  searchQuery: string;
+  variants: DrillVariant[];
+  defaultDrill: string;
+  defaultSearchQuery: string;
 }
 
 const RULES: KeywordRule[] = [
   {
     keyword: /backhand/i,
     label: 'backhand',
-    drill: 'Cross-court backhand consistency — hit 20 in a row, then work the inside-out forehand to run around it.',
-    searchQuery: 'backhand consistency drill',
+    variants: [
+      {
+        keyword: /power|weak|soft|no pace|lacks? pace|pushing it/i,
+        drill: 'Backhand power drill — focus on full shoulder turn and finishing the swing high; 15 reps at 80% pace prioritizing racket-head speed over just making contact.',
+        searchQuery: 'backhand power drill',
+      },
+      {
+        keyword: /short|shallow|depth|sitting up|sitter/i,
+        drill: 'Backhand depth drill — aim to land 15 in a row past the service line, inside the baseline.',
+        searchQuery: 'backhand depth drill',
+      },
+      {
+        keyword: /slice|flat|spin|net.{0,15}(a lot|too many)/i,
+        drill: 'Topspin backhand drill — brush up the back of the ball on every rep until margin over the net feels automatic.',
+        searchQuery: 'topspin backhand drill',
+      },
+    ],
+    defaultDrill: 'Cross-court backhand consistency — hit 20 in a row, then work the inside-out forehand to run around it.',
+    defaultSearchQuery: 'backhand consistency drill',
   },
   {
     keyword: /forehand/i,
     label: 'forehand',
-    drill: 'Forehand depth and consistency drill — 20 balls cross-court, then 20 down the line.',
-    searchQuery: 'forehand consistency drill',
+    variants: [
+      {
+        keyword: /power|weak|soft|no pace|lacks? pace|floaty|floating/i,
+        drill: 'Forehand power drill — hip and shoulder rotation into every ball, full follow-through over the shoulder; 15 reps at 80% pace focused on racket-head speed, not just clean contact.',
+        searchQuery: 'forehand power drill',
+      },
+      {
+        keyword: /short|shallow|depth|sitting up|sitter/i,
+        drill: 'Forehand depth drill — 15 balls in a row landing past the service line, inside the baseline.',
+        searchQuery: 'forehand depth drill',
+      },
+      {
+        keyword: /flat|spin|net.{0,15}(a lot|too many)/i,
+        drill: 'Topspin forehand drill — brush up over the ball on every rep to build margin over the net.',
+        searchQuery: 'topspin forehand drill',
+      },
+    ],
+    defaultDrill: 'Forehand depth and consistency drill — 20 balls cross-court, then 20 down the line.',
+    defaultSearchQuery: 'forehand consistency drill',
   },
   {
     keyword: /serve/i,
     label: 'serve',
-    drill: 'Second-serve spin and placement — 20 serves at 75% pace, aiming for the corners.',
-    searchQuery: 'second serve spin drill',
+    variants: [
+      {
+        keyword: /power|weak|soft|no pace|lacks? pace|slow/i,
+        drill: 'First-serve power drill — full trophy pose and leg drive on every rep; 15 first serves at high effort focused on racket-head speed at contact, not just getting it in.',
+        searchQuery: 'tennis serve power drill',
+      },
+      {
+        keyword: /double fault|fault|consisten|missing|out|net/i,
+        drill: 'Serve consistency drill — 20 serves at 75% pace, aiming just for a clean, repeatable toss and swing before adding pace back.',
+        searchQuery: 'tennis serve consistency drill',
+      },
+    ],
+    defaultDrill: 'Second-serve spin and placement — 20 serves at 75% pace, aiming for the corners.',
+    defaultSearchQuery: 'second serve spin drill',
   },
   {
     keyword: /footwork|movement/i,
     label: 'footwork',
-    drill: 'Split-step and recovery footwork ladder drills before hitting live points.',
-    searchQuery: 'tennis footwork ladder drill',
+    variants: [
+      {
+        keyword: /recovery|reset|center/i,
+        drill: 'Recovery footwork drill — split-step and recover to center after every shot before the next ball, walk-through pace first.',
+        searchQuery: 'tennis recovery footwork drill',
+      },
+      {
+        keyword: /slow|late|behind|reaction/i,
+        drill: 'Reaction footwork drill — split-step timed to the opponent contact, then explosive first step to a fed ball.',
+        searchQuery: 'tennis reaction footwork drill',
+      },
+    ],
+    defaultDrill: 'Split-step and recovery footwork ladder drills before hitting live points.',
+    defaultSearchQuery: 'tennis footwork ladder drill',
   },
   {
     keyword: /volley|net/i,
     label: 'net game',
-    drill: 'Volley punch drill at the net, focusing on a short, compact swing.',
-    searchQuery: 'tennis volley drill',
+    variants: [
+      {
+        keyword: /power|hard|smash|overhead/i,
+        drill: 'Overhead and put-away drill — 15 reps finishing volleys with authority instead of just blocking them back.',
+        searchQuery: 'tennis overhead put away drill',
+      },
+    ],
+    defaultDrill: 'Volley punch drill at the net, focusing on a short, compact swing.',
+    defaultSearchQuery: 'tennis volley drill',
   },
 ];
+
+function pickDrill(rule: KeywordRule, noteText: string): { drill: string; searchQuery: string } {
+  const variant = rule.variants.find((v) => v.keyword.test(noteText));
+  return variant
+    ? { drill: variant.drill, searchQuery: variant.searchQuery }
+    : { drill: rule.defaultDrill, searchQuery: rule.defaultSearchQuery };
+}
 
 // Shared by both the heuristic path (below) and the AI path (in
 // runAnalysis) — same "how often, how recent" framing either way, computed
@@ -129,12 +216,20 @@ async function runHeuristic(
     existing.filter((i) => i.status === 'active').map((i) => saveInsight(playerId, { ...i, status: 'dismissed' }))
   );
 
+  // The drill itself is picked from the MOST RECENT matching note's actual
+  // wording, not the rule in the abstract — "forehand had no power" two
+  // matches ago shouldn't win out over "forehand keeps missing" in the
+  // latest one when deciding which specific drill to suggest right now.
+  const mostRecentIdx = Math.min(...best.indices);
+  const mostRecentNote = recent[mostRecentIdx].selfReflection.whatToImprove;
+  const { drill, searchQuery } = pickDrill(best.rule, mostRecentNote);
+
   const insight: PracticeInsight = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     ownerPlayerId: playerId,
-    patternDescription: describeHeuristic(best.rule.label, best.matching.length, recent.length, Math.min(...best.indices)),
-    suggestedDrill: best.rule.drill,
-    drillSearchQuery: best.rule.searchQuery,
+    patternDescription: describeHeuristic(best.rule.label, best.matching.length, recent.length, mostRecentIdx),
+    suggestedDrill: drill,
+    drillSearchQuery: searchQuery,
     sourceMatchIds: best.matching.map((m) => m.id),
     status: 'active',
   };
