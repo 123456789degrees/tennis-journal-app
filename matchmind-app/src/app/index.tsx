@@ -89,6 +89,12 @@ export default function Index() {
 
   const animatedUsers = useCountUp(stats?.users ?? 0, statsTriggered);
   const animatedMatches = useCountUp(stats?.matches ?? 0, statsTriggered);
+  // Fixed, not live: how many players in my USTA section were already using
+  // MatchMind before it even had real accounts (back when everything just
+  // lived in local browser storage, with no server to count anyone). True,
+  // but unlike the two counters above it can't come from a database query —
+  // there's nothing to query — so it's a constant, not a growing tracker.
+  const animatedEarlyUsers = useCountUp(100, statsTriggered);
 
   const goToApp = () => router.push('/home');
   const goToSignup = () => router.push('/login?mode=signup');
@@ -185,10 +191,18 @@ export default function Index() {
           <ThemedView style={styles.statsRow}>
             <ThemedView style={styles.statItem}>
               <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
+                {animatedEarlyUsers.toLocaleString()}+
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+                players already using it in my own USTA section
+              </ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.statItem}>
+              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
                 {animatedUsers.toLocaleString()}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                players journaling their matches
+                players with an account
               </ThemedText>
             </ThemedView>
             <ThemedView style={styles.statItem}>
