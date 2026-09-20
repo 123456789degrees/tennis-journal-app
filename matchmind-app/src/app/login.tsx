@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +18,10 @@ type Mode = 'signin' | 'signup';
 export default function LoginScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const [mode, setMode] = useState<Mode>('signin');
+  // The landing page's "Get started" button links here with ?mode=signup
+  // so it drops straight into account creation instead of sign-in.
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const [mode, setMode] = useState<Mode>(params.mode === 'signup' ? 'signup' : 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
