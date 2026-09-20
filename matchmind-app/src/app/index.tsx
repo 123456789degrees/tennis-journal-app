@@ -1,7 +1,14 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Copyright } from '@/components/copyright';
@@ -12,8 +19,10 @@ import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getCurrentPlayerId } from '@/data/storage';
+import { useCountUp } from '@/hooks/use-count-up';
 import { useTheme } from '@/hooks/use-theme';
 import { enforceInactivityTimeout } from '@/lib/session-activity';
+import { supabase } from '@/lib/supabase';
 
 // This is the first thing anyone sees at matchmindtennis.com now — signed
 // in or not. A signed-in player gets a "Go to your matches" shortcut
@@ -34,6 +43,52 @@ export default function Index() {
       getCurrentPlayerId().then((id) => setIsLoggedIn(!!id));
     });
   }, []);
+
+  // Site-wide totals for the "N players / N matches logged" counters below,
+  // via a security-definer RPC (see supabase/schema.sql: site_stats()) since
+  // normal row-level security scopes every other query to one player's own
+  // data. Counted up rather than shown instantly once this section scrolls
+  // into view, purely for effect.
+  const [stats, setStats] = useState<{ users: number; matches: number } | null>(null);
+  useEffect(() => {
+    supabase.rpc('site_stats').then(({ data, error }) => {
+      const row = !error && data ? data[0] : null;
+      if (row) {
+        setStats({ users: Number(row.userCount) || 0, matches: Number(row.matchCount) || 0 });
+      }
+    });
+  }, []);
+
+  // Refs, not state — these update on every scroll frame and only ever feed
+  // a single derived boolean (below), so there's no reason to re-render on
+  // every one of them individually.
+  const viewportHeightRef = useRef(0);
+  const scrollYRef = useRef(0);
+  const statsSectionYRef = useRef<number | null>(null);
+  const [statsTriggered, setStatsTriggered] = useState(false);
+
+  const checkStatsVisible = () => {
+    const sectionY = statsSectionYRef.current;
+    if (sectionY == null || viewportHeightRef.current === 0) return;
+    // Fires once the top of the stats band is ~60px into the viewport.
+    if (scrollYRef.current + viewportHeightRef.current > sectionY + 60) setStatsTriggered(true);
+  };
+
+  const onRootLayout = (e: LayoutChangeEvent) => {
+    viewportHeightRef.current = e.nativeEvent.layout.height;
+    checkStatsVisible();
+  };
+  const onStatsLayout = (e: LayoutChangeEvent) => {
+    statsSectionYRef.current = e.nativeEvent.layout.y;
+    checkStatsVisible();
+  };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollYRef.current = e.nativeEvent.contentOffset.y;
+    checkStatsVisible();
+  };
+
+  const animatedUsers = useCountUp(stats?.users ?? 0, statsTriggered);
+  const animatedMatches = useCountUp(stats?.matches ?? 0, statsTriggered);
 
   const goToApp = () => router.push('/home');
   const goToSignup = () => router.push('/login?mode=signup');
@@ -58,8 +113,11 @@ export default function Index() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <ScrollView>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+      onLayout={onRootLayout}
+    >
+      <ScrollView onScroll={onScroll} scrollEventThrottle={16}>
         {/* Hero */}
         <ThemedView style={[styles.band, styles.heroBand, { backgroundColor: theme.primary }]}>
           <ThemedView style={styles.topNav}>
@@ -115,6 +173,31 @@ export default function Index() {
                   </ThemedText>
                 </>
               )}
+            </ThemedView>
+          </ThemedView>
+        </ThemedView>
+
+        {/* Stats */}
+        <ThemedView
+          style={[styles.band, { backgroundColor: theme.background }]}
+          onLayout={onStatsLayout}
+        >
+          <ThemedView style={styles.statsRow}>
+            <ThemedView style={styles.statItem}>
+              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
+                {animatedUsers.toLocaleString()}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+                players journaling their matches
+              </ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.statItem}>
+              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
+                {animatedMatches.toLocaleString()}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+                matches logged so far
+              </ThemedText>
             </ThemedView>
           </ThemedView>
         </ThemedView>
@@ -270,6 +353,19 @@ const styles = StyleSheet.create({
   heroSubhead: { textAlign: 'center', fontSize: 17, lineHeight: 24, opacity: 0.95, maxWidth: 480 },
   heroButtons: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
   signInLink: { textDecorationLine: 'underline', opacity: 0.9 },
+  statsRow: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.five,
+    gap: Spacing.six,
+  },
+  statItem: { alignItems: 'center', minWidth: 160, gap: Spacing.one },
+  statNumber: { fontSize: 44, fontWeight: '800', lineHeight: 50 },
+  statLabel: { textAlign: 'center' },
   storyInner: {
     width: '100%',
     maxWidth: 720,

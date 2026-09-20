@@ -76,3 +76,23 @@ create policy "practice_insights_owner_all" on public.practice_insights
 
 create policy "video_feedback_owner_all" on public.video_feedback
   for all using (auth.uid() = "ownerPlayerId") with check (auth.uid() = "ownerPlayerId");
+
+-- Public site stats (landing page "N players / N matches logged" counters).
+-- RLS above scopes every normal query to one player's own rows, but the
+-- landing page needs a total across everyone -- so this one function runs
+-- `security definer`, meaning it executes as the function's owner (whoever
+-- runs this in the SQL editor, normally a superuser-ish role) and bypasses
+-- RLS on purpose. It only ever returns two aggregate counts, never any row
+-- data, so it's safe to expose to anon/authenticated callers.
+create or replace function public.site_stats()
+returns table ("userCount" bigint, "matchCount" bigint)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    (select count(*) from auth.users) as "userCount",
+    (select count(*) from public.matches) as "matchCount";
+$$;
+
+grant execute on function public.site_stats() to anon, authenticated;
