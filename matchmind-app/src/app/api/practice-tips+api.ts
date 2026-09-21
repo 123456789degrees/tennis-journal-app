@@ -11,8 +11,8 @@ interface ReflectionMatch {
 interface RequestBody {
   matches: ReflectionMatch[]; // most recent first
   excludePatterns?: string[]; // patterns already shown — asked to avoid repeating these
-  // The player's own self-identified playstyle from the "My Playstyle" quiz
-  // (see data/playstyle-quiz.ts) — undefined if they haven't taken it.
+  // The player's own self-identified playstyle from "My Playstyle" (see
+  // app/my-playstyle.tsx) — undefined if they haven't scouted themselves yet.
   // Loosely typed as a plain string here rather than importing the shared
   // Playstyle union: this route intentionally has no cross-file imports
   // (see opponent-scout+api.ts), and the value is only ever interpolated

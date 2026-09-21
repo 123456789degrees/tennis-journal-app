@@ -11,7 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 // Matches the breakpoint TopNavActions switches to icon-only at, so the
 // title doesn't hog the little room that frees up on a real phone screen.
-const NARROW_BREAKPOINT = 640;
+const NARROW_BREAKPOINT = 820;
 
 // Replaces the native Stack header. The native one pins the title flush to
 // the true left edge of the browser and headerRight flush to the true right

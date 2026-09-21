@@ -18,9 +18,24 @@ export interface Player {
   settings: {
     practiceNudgesEnabled: boolean;
     logReminderEnabled: boolean;
-    // Result of the "My Playstyle" self-assessment quiz — undefined until
-    // the player takes it. See data/playstyle-quiz.ts / app/my-playstyle.tsx.
+    // "My Playstyle" — the player scouts THEMSELVES the same way they scout
+    // an opponent (see ScoutingNotes below), and an AI (or a keyword
+    // fallback) determines the closest matching style(s). myScoutingNotes
+    // being set is what "has completed this" means; the fields below are
+    // its result and are undefined until that first analysis runs. See
+    // app/my-playstyle.tsx / app/api/my-playstyle+api.ts.
+    myScoutingNotes?: ScoutingNotes;
     myPlaystyle?: Playstyle;
+    myPlaystylePercent?: number;
+    // Only present when the player's own notes are a genuine blend of two
+    // styles rather than one clear fit.
+    myPlaystyleSecondary?: Playstyle;
+    myPlaystyleSecondaryPercent?: number;
+    // One paragraph + a few concrete tips, both written FROM the player's
+    // own scouting notes (not generic per-category boilerplate) — how
+    // they should actually play their next matches.
+    myPlaystyleSummary?: string;
+    myPlaystyleTips?: string[];
   };
 }
 

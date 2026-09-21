@@ -121,7 +121,11 @@ export default function SettingsScreen() {
               <ThemedView>
                 <ThemedText type="smallBold">My Playstyle</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {player.settings.myPlaystyle ?? 'Take the quiz to find out how you actually play'}
+                  {player.settings.myPlaystyle
+                    ? player.settings.myPlaystyleSecondary
+                      ? `${player.settings.myPlaystyle} + ${player.settings.myPlaystyleSecondary}`
+                      : player.settings.myPlaystyle
+                    : 'Scout yourself to find out how you actually play'}
                 </ThemedText>
               </ThemedView>
             </ThemedView>
