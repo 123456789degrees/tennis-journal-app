@@ -155,11 +155,14 @@ export default function Index() {
           <ThemedView style={styles.heroInner}>
             <Logo size={120} />
             <ThemedText type="title" style={[styles.heroHeadline, { color: theme.primaryText }]}>
-              Never walk into a rematch blind.
+              Mind Over Match.
+            </ThemedText>
+            <ThemedText style={[styles.heroTagline, { color: theme.primaryText }]}>
+              Turn every tennis match into a smarter practice plan.
             </ThemedText>
             <ThemedText style={[styles.heroSubhead, { color: theme.primaryText }]}>
-              MatchMind is a tennis match journal that takes seconds to update — and remembers
-              every opponent for you.
+              MatchMind helps tennis players record their matches, understand their performance,
+              and use AI-powered insights to discover patterns in their game.
             </ThemedText>
             <ThemedView style={styles.heroButtons}>
               {isLoggedIn ? (
@@ -222,10 +225,6 @@ export default function Index() {
           <ThemedView style={styles.howInner}>
             <ThemedText type="title" style={styles.sectionTitle}>
               How it works
-            </ThemedText>
-            <ThemedText style={styles.howIntro}>
-              MatchMind helps tennis players record their matches, understand their performance,
-              and use AI-powered insights to discover patterns in their game.
             </ThemedText>
             <ThemedView style={styles.stepsRow}>
               {steps.map((step, i) => (
@@ -350,6 +349,13 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   heroHeadline: { textAlign: 'center', fontSize: 34, lineHeight: 40 },
+  heroTagline: {
+    textAlign: 'center',
+    fontSize: 19,
+    lineHeight: 26,
+    fontWeight: '700',
+    maxWidth: 480,
+  },
   heroSubhead: { textAlign: 'center', fontSize: 17, lineHeight: 24, opacity: 0.95, maxWidth: 480 },
   heroButtons: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
   signInLink: { textDecorationLine: 'underline', opacity: 0.9 },
@@ -380,7 +386,6 @@ const styles = StyleSheet.create({
   storyItalic: { fontStyle: 'italic' },
   storyQuestion: { fontSize: 19 },
   storyEmphasis: { fontSize: 16 },
-  howIntro: { fontSize: 16, lineHeight: 24, marginBottom: Spacing.one },
   howInner: {
     width: '100%',
     maxWidth: MaxContentWidth,
