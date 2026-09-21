@@ -44,6 +44,9 @@ export default function PracticeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const [partnerDrillsOpen, setPartnerDrillsOpen] = useState(false);
+  // Videos are an optional extra now, not the main content — collapsed
+  // until the player actually asks for them, per insight.
+  const [openVideoIds, setOpenVideoIds] = useState<Record<string, boolean>>({});
   // A ref (not state) so the "already fetched?" check stays correct even
   // when called from a useFocusEffect callback holding a stale closure —
   // refs are a stable mutable box every closure reads the same live value
@@ -69,7 +72,14 @@ export default function PracticeScreen() {
     setInsights(active);
     const feedback = await listVideoFeedback(playerId);
     setVideoFeedback(feedback);
-    active.forEach((insight) => loadVideosFor(insight, feedback));
+    // Videos are fetched lazily now (see toggleVideos), not eagerly for
+    // every insight on load — they're an optional extra, not the headline.
+  }
+
+  function toggleVideos(insight: PracticeInsight) {
+    const opening = !openVideoIds[insight.id];
+    setOpenVideoIds((prev) => ({ ...prev, [insight.id]: opening }));
+    if (opening) loadVideosFor(insight, videoFeedback);
   }
 
   useFocusEffect(
@@ -111,6 +121,7 @@ export default function PracticeScreen() {
       const query = insight.drillSearchQuery || shortenForSearch(insight.suggestedDrill);
       const currentVideoIds = (videosByInsight[insight.id] ?? []).map((v) => v.id);
       const bias: ChannelBias = { ...channelBiasFrom(videoFeedback), excludeVideoIds: currentVideoIds };
+      setOpenVideoIds((prev) => ({ ...prev, [insight.id]: true }));
       setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
       const videos = await fetchDrillVideos(query, bias);
       setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
@@ -229,6 +240,7 @@ export default function PracticeScreen() {
             const videos = videosByInsight[insight.id] ?? [];
             const ratableVideos = videos.filter((v) => v.channelId);
             const isRating = ratingId === insight.id;
+            const videosOpen = !!openVideoIds[insight.id];
             return (
               <Card key={insight.id} tint="accent">
                 <ThemedView style={styles.cardHeaderRow}>
@@ -237,35 +249,72 @@ export default function PracticeScreen() {
                     {insight.patternDescription}
                   </ThemedText>
                 </ThemedView>
+
+                {insight.matchTip ? (
+                  <ThemedView
+                    style={[
+                      styles.tipCallout,
+                      { backgroundColor: theme.background, borderColor: theme.primary },
+                    ]}
+                  >
+                    <ThemedView style={styles.cardHeaderRow}>
+                      <Ionicons name="bulb-outline" size={18} color={theme.primary} />
+                      <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                        Try this in your next match
+                      </ThemedText>
+                    </ThemedView>
+                    <ThemedText style={styles.patternText}>{insight.matchTip}</ThemedText>
+                  </ThemedView>
+                ) : null}
+
                 <ThemedView style={styles.cardHeaderRow}>
                   <Ionicons name="construct-outline" size={16} color={theme.textSecondary} />
-                  <ThemedText style={styles.patternText}>
-                    <ThemedText type="smallBold">Suggested drill: </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.patternText}>
+                    <ThemedText type="smallBold" themeColor="textSecondary">
+                      Practice it:{' '}
+                    </ThemedText>
                     {insight.suggestedDrill}
                   </ThemedText>
                 </ThemedView>
 
-                {loadingVideoIds[insight.id] ? (
+                <Pressable style={styles.actionLink} onPress={() => toggleVideos(insight)}>
+                  <Ionicons
+                    name={videosOpen ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color={theme.textSecondary}
+                  />
                   <ThemedText type="small" themeColor="textSecondary">
-                    Finding videos...
+                    {videosOpen ? 'Hide video ideas' : 'Show video ideas (optional)'}
                   </ThemedText>
-                ) : videos.length > 0 ? (
-                  <ThemedView style={styles.videoRow}>
-                    {videos.map((video) => (
-                      <Pressable key={video.id} style={styles.videoCard} {...webLinkProps(video.url)}>
-                        {video.thumbnail ? (
-                          <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
-                        ) : (
-                          <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
-                            <Ionicons name="logo-youtube" size={22} color="#FF0000" />
-                          </ThemedView>
-                        )}
-                        <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
-                          {video.title}
-                        </ThemedText>
-                      </Pressable>
-                    ))}
-                  </ThemedView>
+                </Pressable>
+
+                {videosOpen ? (
+                  loadingVideoIds[insight.id] ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Finding videos...
+                    </ThemedText>
+                  ) : videos.length > 0 ? (
+                    <ThemedView style={styles.videoRow}>
+                      {videos.map((video) => (
+                        <Pressable key={video.id} style={styles.videoCard} {...webLinkProps(video.url)}>
+                          {video.thumbnail ? (
+                            <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
+                          ) : (
+                            <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
+                              <Ionicons name="logo-youtube" size={22} color="#FF0000" />
+                            </ThemedView>
+                          )}
+                          <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
+                            {video.title}
+                          </ThemedText>
+                        </Pressable>
+                      ))}
+                    </ThemedView>
+                  ) : (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      No videos found for this one.
+                    </ThemedText>
+                  )
                 ) : null}
 
                 {isRating ? (
@@ -433,6 +482,12 @@ const styles = StyleSheet.create({
   refreshMessageRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   patternText: { flex: 1 },
+  tipCallout: {
+    borderRadius: Radius.small,
+    borderWidth: 1.5,
+    padding: Spacing.two,
+    gap: Spacing.one,
+  },
   actionsRow: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two, flexWrap: 'wrap' },
   actionLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   correctionBox: { marginTop: Spacing.two, gap: Spacing.one },

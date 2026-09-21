@@ -96,3 +96,8 @@ as $$
 $$;
 
 grant execute on function public.site_stats() to anon, authenticated;
+
+-- New column for practice_insights: a concrete "what to do differently in
+-- your next match" tip, separate from the practice-court drill. Existing
+-- rows just get null here, which the app already treats as "no tip yet."
+alter table public.practice_insights add column if not exists "matchTip" text;

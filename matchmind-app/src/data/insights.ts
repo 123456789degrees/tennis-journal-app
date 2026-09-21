@@ -1,6 +1,7 @@
 import type { Match, PracticeInsight } from './models';
 import {
   getLastAnalyzedMatchId,
+  getPlayer,
   listInsights,
   listMatches,
   saveInsight,
@@ -25,6 +26,12 @@ interface DrillVariant {
   keyword: RegExp;
   drill: string;
   searchQuery: string;
+  // A concrete in-MATCH adjustment, not a practice-court exercise — what to
+  // actually do differently next time this situation comes up in a real
+  // match, e.g. "hit crosscourt more and aim for more margin, don't aim
+  // for the corner." This is the primary content shown to the player now;
+  // the drill/video are the supporting "how to practice it" extras.
+  tip: string;
 }
 
 interface KeywordRule {
@@ -33,6 +40,7 @@ interface KeywordRule {
   variants: DrillVariant[];
   defaultDrill: string;
   defaultSearchQuery: string;
+  defaultTip: string;
 }
 
 // Every drill below is something you do WITH a partner, feeding or playing
@@ -50,20 +58,24 @@ const RULES: KeywordRule[] = [
         keyword: /power|weak|soft|no pace|lacks? pace|pushing it/i,
         drill: 'Cross-court backhand battle — rally backhand-to-backhand with a partner; only a shot with real pace past the service line wins the point, anything soft or floaty loses it outright. Play to 11, win by 2.',
         searchQuery: 'backhand power drill',
+        tip: "Don't try to force pace on a backhand you're not set up for — take it cross-court with extra margin over the net instead of aiming for a winner you don't have time to generate.",
       },
       {
         keyword: /short|shallow|depth|sitting up|sitter/i,
         drill: 'Backhand depth game — cross-court backhand rally with a partner; any ball landing short of the service line loses the point immediately. First to 11.',
         searchQuery: 'backhand depth drill',
+        tip: "Aim for depth over placement on your backhand — a ball that lands mid-court but deep is safer than one aimed at a corner that clips the net or sails long.",
       },
       {
         keyword: /slice|flat|spin|net.{0,15}(a lot|too many)/i,
         drill: 'Topspin-only backhand rally — cross-court with a partner, but a shot with visible slice or a flat, low-margin ball restarts the point instead of counting. Play to 11 and see how many rallies you actually win clean.',
         searchQuery: 'topspin backhand drill',
+        tip: 'Add topspin margin instead of hitting your backhand flat — a heavier ball that clears the net safely beats a flatter one that catches the tape.',
       },
     ],
     defaultDrill: 'Cross-court backhand battle — rally backhand cross-court only with a partner, first to 15 clean cross-court balls wins the game; loser starts the next one down 0-3.',
     defaultSearchQuery: 'backhand consistency drill',
+    defaultTip: "Hit more backhands cross-court with margin instead of going for the line — the safer shot keeps the point alive on your terms.",
   },
   {
     keyword: /forehand/i,
@@ -73,20 +85,24 @@ const RULES: KeywordRule[] = [
         keyword: /power|weak|soft|no pace|lacks? pace|floaty|floating/i,
         drill: 'Cross-court forehand battle — rally forehand-to-forehand with a partner; only a shot with real pace past the service line wins the point, a soft or floaty ball loses it outright. Play to 11, win by 2.',
         searchQuery: 'forehand power drill',
+        tip: "Don't force power on a forehand you're not balanced for — hit it cross-court with more margin instead of aiming for the corner; the extra net clearance keeps the point on your terms.",
       },
       {
         keyword: /short|shallow|depth|sitting up|sitter/i,
         drill: 'Forehand depth game — cross-court forehand rally with a partner; any ball landing short of the service line loses the point immediately. First to 11.',
         searchQuery: 'forehand depth drill',
+        tip: 'Aim for depth over placement on your forehand — a deep ball to the middle of the court is safer and still puts your opponent under pressure than one aimed tight to a corner.',
       },
       {
         keyword: /flat|spin|net.{0,15}(a lot|too many)/i,
         drill: 'Topspin-only forehand rally — cross-court with a partner, but a flat, low-margin ball restarts the point instead of counting. Play to 11 and see how many rallies you actually win clean.',
         searchQuery: 'topspin forehand drill',
+        tip: 'Add topspin margin instead of hitting flat — a heavier, safer ball that clears the net beats a flatter one that catches the tape.',
       },
     ],
     defaultDrill: 'Cross-court forehand battle — 20 balls cross-court with a partner playing it live, then switch to playing out full points starting cross-court only.',
     defaultSearchQuery: 'forehand consistency drill',
+    defaultTip: 'Hit more forehands cross-court with margin instead of going for the corner — the safer shot keeps the point alive on your terms.',
   },
   {
     keyword: /serve/i,
@@ -96,15 +112,18 @@ const RULES: KeywordRule[] = [
         keyword: /power|weak|soft|no pace|lacks? pace|slow/i,
         drill: 'First-serve scoring game — partner returns everything live; you score +1 for an ace or unreturned first serve, 0 if it comes back soft, -1 for a fault. Serve 10 and see if you finish net positive.',
         searchQuery: 'tennis serve power drill',
+        tip: "Don't sacrifice your first-serve percentage chasing extra pace — a reliable serve that keeps you out of second-serve trouble beats a bigger one that misses half the time.",
       },
       {
         keyword: /double fault|fault|consisten|missing|out|net/i,
         drill: 'Serve-and-3 pressure game — partner returns live and you play the point out for real, but a first serve only "counts" as a good hold if you win the point within the first three shots. Track your real first-serve percentage under that pressure, not just an isolated toss.',
         searchQuery: 'tennis serve consistency drill',
+        tip: 'Take some pace off your first serve and prioritize a clean, repeatable toss over trying to hit it hard — you can add speed back once the miss rate actually drops.',
       },
     ],
     defaultDrill: 'Second-serve target game — partner returns live; call a corner (wide/body/T) before each serve and only score it as a win if you hit that target and win the point outright.',
     defaultSearchQuery: 'second serve spin drill',
+    defaultTip: 'Pick a target before every serve instead of just swinging — even aiming for a side of the box gives your serve a purpose beyond just getting it in.',
   },
   {
     keyword: /footwork|movement/i,
@@ -114,15 +133,18 @@ const RULES: KeywordRule[] = [
         keyword: /recovery|reset|center/i,
         drill: 'Live recovery drill — partner feeds to alternating corners and you play the point out live; every ball you must split-step and fully recover to center before the next one arrives, or the point gets replayed against you.',
         searchQuery: 'tennis recovery footwork drill',
+        tip: "Make recovering to center your automatic next move after every shot — don't stand and watch your own ball, start moving back the instant you hit it.",
       },
       {
         keyword: /slow|late|behind|reaction/i,
         drill: 'Reaction rally — partner mixes cross-court and down-the-line feeds mid-point unpredictably while you play it out live; track how many times you’re late on the first step.',
         searchQuery: 'tennis reaction footwork drill',
+        tip: "Time your split-step to your opponent's contact point, not your own — that's usually the real reason you're a step late.",
       },
     ],
     defaultDrill: 'Two-ball-then-live drill — partner feeds two balls to opposite corners before every point starts live, forcing real recovery before you actually play it out.',
     defaultSearchQuery: 'tennis footwork ladder drill',
+    defaultTip: 'Split-step on every one of your opponent’s shots, even ones that look routine — the habit only holds up in matches if it’s automatic, not something you turn on for the hard balls.',
   },
   {
     keyword: /volley|net/i,
@@ -132,18 +154,23 @@ const RULES: KeywordRule[] = [
         keyword: /power|hard|smash|overhead/i,
         drill: 'Approach-and-finish game — partner feeds a short ball, you approach and must finish the next shot as a real volley or overhead putaway to win the point; a soft block-back doesn’t count.',
         searchQuery: 'tennis overhead put away drill',
+        tip: 'When you get a short ball, commit fully to finishing it at net rather than playing it safe — a tentative approach shot just invites your opponent back into the point.',
       },
     ],
     defaultDrill: 'Net pressure game — play out live points starting with you at net; partner tries to pass or lob you, and you must finish with a real volley (not a block) to win the point.',
     defaultSearchQuery: 'tennis volley drill',
+    defaultTip: "Take the net away from your opponent more often — a short, compact volley off a good approach shot ends points you'd otherwise have to grind out from the baseline.",
   },
 ];
 
-function pickDrill(rule: KeywordRule, noteText: string): { drill: string; searchQuery: string } {
+function pickDrill(
+  rule: KeywordRule,
+  noteText: string
+): { drill: string; searchQuery: string; tip: string } {
   const variant = rule.variants.find((v) => v.keyword.test(noteText));
   return variant
-    ? { drill: variant.drill, searchQuery: variant.searchQuery }
-    : { drill: rule.defaultDrill, searchQuery: rule.defaultSearchQuery };
+    ? { drill: variant.drill, searchQuery: variant.searchQuery, tip: variant.tip }
+    : { drill: rule.defaultDrill, searchQuery: rule.defaultSearchQuery, tip: rule.defaultTip };
 }
 
 // Shared by both the heuristic path (below) and the AI path (in
@@ -228,7 +255,7 @@ async function runHeuristic(
   // latest one when deciding which specific drill to suggest right now.
   const mostRecentIdx = Math.min(...best.indices);
   const mostRecentNote = recent[mostRecentIdx].selfReflection.whatToImprove;
-  const { drill, searchQuery } = pickDrill(best.rule, mostRecentNote);
+  const { drill, searchQuery, tip } = pickDrill(best.rule, mostRecentNote);
 
   const insight: PracticeInsight = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -236,6 +263,7 @@ async function runHeuristic(
     patternDescription: describeHeuristic(best.rule.label, best.matching.length, recent.length, mostRecentIdx),
     suggestedDrill: drill,
     drillSearchQuery: searchQuery,
+    matchTip: tip,
     sourceMatchIds: best.matching.map((m) => m.id),
     status: 'active',
   };
@@ -249,6 +277,10 @@ interface AiPattern {
   pattern: string;
   drill: string;
   searchQuery: string;
+  // A concrete in-MATCH adjustment for next time (see DrillVariant.tip's
+  // comment above) — the primary content shown to the player; drill/video
+  // are supporting "how to practice it" extras.
+  matchTip: string;
   // 1-indexed "Match N" numbers the model says support this pattern — see
   // practice-tips+api.ts's prompt. Used to compute a verified evidence
   // clause instead of trusting the model's own count/recency claims.
@@ -257,7 +289,8 @@ interface AiPattern {
 
 async function fetchAiPatterns(
   recent: Match[],
-  excludePatterns: string[]
+  excludePatterns: string[],
+  playstyle: string | undefined
 ): Promise<AiPattern[] | null> {
   try {
     const res = await fetch('/api/practice-tips', {
@@ -271,6 +304,7 @@ async function fetchAiPatterns(
           whatToImprove: m.selfReflection.whatToImprove,
         })),
         excludePatterns,
+        playstyle,
       }),
     });
     const data = await res.json();
@@ -287,7 +321,14 @@ async function runAnalysis(
   excludePatterns: string[],
   excludeAnyPastLabel: boolean
 ): Promise<boolean> {
-  const aiPatterns = await fetchAiPatterns(recent, excludePatterns);
+  // The player's own self-identified playstyle (from the My Playstyle quiz,
+  // if they've taken it) — lets the AI tailor the tip to how that kind of
+  // player should actually adjust, not generic stroke advice. Undefined
+  // when they haven't taken the quiz; the prompt handles that gracefully.
+  const player = await getPlayer(playerId);
+  const playstyle = player?.settings.myPlaystyle;
+
+  const aiPatterns = await fetchAiPatterns(recent, excludePatterns, playstyle);
 
   if (aiPatterns && aiPatterns.length > 0) {
     // One nudge at a time — the prompt already asks for the single
@@ -327,6 +368,7 @@ async function runAnalysis(
       patternDescription,
       suggestedDrill: top.drill,
       drillSearchQuery: top.searchQuery,
+      matchTip: top.matchTip,
       sourceMatchIds: sourceMatches.map((m) => m.id),
       status: 'active',
     });

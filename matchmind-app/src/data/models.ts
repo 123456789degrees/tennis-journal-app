@@ -74,6 +74,12 @@ export interface PracticeInsight {
   // YouTube search to reliably match a real video. Optional so insights
   // saved before this field existed still fall back to suggestedDrill.
   drillSearchQuery?: string;
+  // A concrete, actionable adjustment for the player's NEXT matches (e.g.
+  // "hit crosscourt more and aim for more margin, don't aim for the
+  // corner") — distinct from suggestedDrill, which is practice-court
+  // exercise, not in-match advice. Optional so insights saved before this
+  // field existed still render fine without it.
+  matchTip?: string;
   sourceMatchIds: string[];
   status: InsightStatus;
   // What the player actually typed when marking this "Not quite" — a fixed
