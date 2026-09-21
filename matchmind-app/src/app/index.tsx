@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Image,
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -102,21 +103,27 @@ export default function Index() {
   const goToSignup = () => router.push('/login?mode=signup');
   const goToLogin = () => router.push('/login');
 
+  // Real screenshots of the actual app (seeded with realistic sample data,
+  // not a live account) — proof these claims are real features, not just
+  // marketing copy.
   const steps = [
     {
       icon: <MaterialCommunityIcons name="tennis-ball" size={22} color={theme.primary} />,
       title: 'Track',
       body: 'Record the key moments and statistics from your matches.',
+      image: require('@/assets/images/landing/track-matches.png'),
     },
     {
       icon: <MaterialCommunityIcons name="brain" size={22} color={theme.primary} />,
       title: 'Analyze',
       body: 'Let AI help identify strengths, weaknesses, and patterns in your performance.',
+      image: require('@/assets/images/landing/analyze-playstyle.png'),
     },
     {
       icon: <Ionicons name="trending-up-outline" size={22} color={theme.primary} />,
       title: 'Improve',
       body: 'Turn match insights into better preparation for your next match.',
+      image: require('@/assets/images/landing/improve-practice-tip.png'),
     },
   ];
 
@@ -235,6 +242,7 @@ export default function Index() {
                   <ThemedText type="small" themeColor="textSecondary">
                     {step.body}
                   </ThemedText>
+                  <Image source={step.image} style={styles.stepImage} resizeMode="contain" />
                 </Card>
               ))}
             </ThemedView>
@@ -382,6 +390,12 @@ const styles = StyleSheet.create({
   },
   stepsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   stepCard: { flexBasis: 260, minWidth: 240 },
+  stepImage: {
+    width: '100%',
+    height: 180,
+    marginTop: Spacing.two,
+    borderRadius: Radius.small,
+  },
   stepNumberRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stepNumber: {
     width: 28,
