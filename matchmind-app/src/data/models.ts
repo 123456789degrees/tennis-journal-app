@@ -18,6 +18,9 @@ export interface Player {
   settings: {
     practiceNudgesEnabled: boolean;
     logReminderEnabled: boolean;
+    // Result of the "My Playstyle" self-assessment quiz — undefined until
+    // the player takes it. See data/playstyle-quiz.ts / app/my-playstyle.tsx.
+    myPlaystyle?: Playstyle;
   };
 }
 

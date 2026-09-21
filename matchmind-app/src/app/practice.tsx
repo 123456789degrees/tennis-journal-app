@@ -193,6 +193,12 @@ export default function PracticeScreen() {
                 Liked videos
               </ThemedText>
             </Pressable>
+            <Pressable style={styles.actionLink} onPress={() => router.push('/my-playstyle')}>
+              <Ionicons name="person-outline" size={16} color={theme.text} />
+              <ThemedText type="small" style={{ color: theme.text, fontWeight: '700' }}>
+                My Playstyle
+              </ThemedText>
+            </Pressable>
           </ThemedView>
         </ThemedView>
         <ThemedText type="small" themeColor="textSecondary">

@@ -114,6 +114,21 @@ export default function SettingsScreen() {
           <ThemedText>{player.email}</ThemedText>
         </Card>
 
+        <Pressable onPress={() => router.push('/my-playstyle')}>
+          <Card style={styles.playstyleRow}>
+            <ThemedView style={styles.privacyRow}>
+              <Ionicons name="person-outline" size={18} color={theme.primary} />
+              <ThemedView>
+                <ThemedText type="smallBold">My Playstyle</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {player.settings.myPlaystyle ?? 'Take the quiz to find out how you actually play'}
+                </ThemedText>
+              </ThemedView>
+            </ThemedView>
+            <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+          </Card>
+        </Pressable>
+
         <Card>
           <ThemedView style={styles.toggleRow}>
             <ThemedText>Practice nudges</ThemedText>
@@ -299,6 +314,7 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   privacyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
+  playstyleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   privacyText: { flex: 1 },
   fieldSpacing: { marginTop: Spacing.two },
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
