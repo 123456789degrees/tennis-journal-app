@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -8,6 +8,10 @@ import { TopNavActions } from '@/components/top-nav-actions';
 import { Logo } from '@/components/ui/logo';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+// Matches the breakpoint TopNavActions switches to icon-only at, so the
+// title doesn't hog the little room that frees up on a real phone screen.
+const NARROW_BREAKPOINT = 640;
 
 // Replaces the native Stack header. The native one pins the title flush to
 // the true left edge of the browser and headerRight flush to the true right
@@ -20,13 +24,20 @@ import { useTheme } from '@/hooks/use-theme';
 // logo is always the way back to Home from anywhere, on every screen.
 export function AppHeader({ title }: { title?: string }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < NARROW_BREAKPOINT;
 
   return (
     <SafeAreaView edges={['top']} style={{ backgroundColor: theme.primary }}>
-      <View style={styles.row}>
+      <View style={[styles.row, isNarrow && styles.rowNarrow]}>
         <View style={styles.left}>
           <HomeLogoLink />
-          <ThemedText style={[styles.title, { color: theme.primaryText }]}>{title}</ThemedText>
+          <ThemedText
+            style={[styles.title, isNarrow && styles.titleNarrow, { color: theme.primaryText }]}
+            numberOfLines={1}
+          >
+            {title}
+          </ThemedText>
         </View>
         <TopNavActions color={theme.primaryText} />
       </View>
@@ -74,7 +85,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
   },
-  left: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, flexShrink: 1 },
+  rowNarrow: { paddingHorizontal: Spacing.two },
+  left: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, flexShrink: 1, minWidth: 0 },
   logoButton: { padding: Spacing.half },
-  title: { fontSize: 20, fontWeight: '700' },
+  title: { fontSize: 20, fontWeight: '700', flexShrink: 1, minWidth: 0 },
+  titleNarrow: { fontSize: 15 },
 });

@@ -1,11 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import {
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+// Below this width (a real phone, not just a narrow browser window on a
+// laptop), there's no room for icon+label nav links and a full "Log a
+// match" pill next to the logo/title -- they were overflowing straight off
+// the screen. Everything drops to icon-only past this point.
+const NARROW_BREAKPOINT = 640;
 
 interface NavItem {
   label: string;
@@ -29,6 +43,8 @@ const ITEMS: NavItem[] = [
 // measured live via each link's own onLayout rather than hardcoded widths,
 // so it always lines up regardless of label length or font.
 export function TopNavActions({ color }: { color: string }) {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < NARROW_BREAKPOINT;
   const pathname = usePathname();
   const activeHref = ITEMS.find((i) => i.href === pathname)?.href ?? null;
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
@@ -69,7 +85,7 @@ export function TopNavActions({ color }: { color: string }) {
   }
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, isNarrow && styles.rowNarrow]}>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -83,11 +99,12 @@ export function TopNavActions({ color }: { color: string }) {
           item={item}
           active={pathname === item.href}
           color={color}
+          iconOnly={isNarrow}
           onLayout={(e) => handleLayout(item.href, e)}
           onHoverChange={(hovering) => setHoveredHref(hovering ? item.href : null)}
         />
       ))}
-      <LogMatchCta />
+      <LogMatchCta iconOnly={isNarrow} />
     </View>
   );
 }
@@ -95,7 +112,7 @@ export function TopNavActions({ color }: { color: string }) {
 // The primary action, set apart from the plain nav links: filled with the
 // accent color (which pops against the primary-green header) instead of
 // blending in like Opponents/Practice/Settings do.
-function LogMatchCta() {
+function LogMatchCta({ iconOnly }: { iconOnly: boolean }) {
   const router = useRouter();
   const theme = useTheme();
   const [scale] = useState(() => new Animated.Value(1));
@@ -115,15 +132,22 @@ function LogMatchCta() {
       onPressIn={() => animateTo(0.95)}
       onPressOut={() => animateTo(1)}
       style={styles.ctaWrapper}
+      accessibilityLabel="Log a match"
       {...hoverProps}
     >
       <Animated.View
-        style={[styles.cta, { backgroundColor: theme.accent, transform: [{ scale }] }]}
+        style={[
+          styles.cta,
+          iconOnly && styles.ctaIconOnly,
+          { backgroundColor: theme.accent, transform: [{ scale }] },
+        ]}
       >
         <Ionicons name="add-circle" size={18} color={theme.accentText} />
-        <ThemedText type="smallBold" style={{ color: theme.accentText }}>
-          Log a match
-        </ThemedText>
+        {!iconOnly && (
+          <ThemedText type="smallBold" style={{ color: theme.accentText }}>
+            Log a match
+          </ThemedText>
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -133,12 +157,14 @@ function NavLink({
   item,
   active,
   color,
+  iconOnly,
   onLayout,
   onHoverChange,
 }: {
   item: NavItem;
   active: boolean;
   color: string;
+  iconOnly: boolean;
   onLayout: (e: LayoutChangeEvent) => void;
   onHoverChange: (hovering: boolean) => void;
 }) {
@@ -167,17 +193,24 @@ function NavLink({
     <Pressable
       onPress={() => router.navigate(item.href)}
       onLayout={onLayout}
-      style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}
+      style={({ pressed }) => [
+        styles.link,
+        iconOnly && styles.linkIconOnly,
+        { opacity: pressed ? 0.7 : 1 },
+      ]}
+      accessibilityLabel={item.label}
       {...hoverProps}
     >
       <Animated.View style={[styles.linkInner, { transform: [{ translateY: lift }] }]}>
         <Ionicons name={item.icon} size={20} color={color} />
-        <ThemedText
-          type="small"
-          style={[styles.label, { color, fontWeight: active ? '800' : '600' }]}
-        >
-          {item.label}
-        </ThemedText>
+        {!iconOnly && (
+          <ThemedText
+            type="small"
+            style={[styles.label, { color, fontWeight: active ? '800' : '600' }]}
+          >
+            {item.label}
+          </ThemedText>
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -185,6 +218,7 @@ function NavLink({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, position: 'relative' },
+  rowNarrow: { gap: Spacing.one },
   pill: {
     position: 'absolute',
     top: -Spacing.one,
@@ -195,6 +229,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   link: { paddingVertical: Spacing.half, paddingHorizontal: Spacing.two, zIndex: 1 },
+  linkIconOnly: { paddingHorizontal: Spacing.one },
   linkInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
   label: {},
   ctaWrapper: { zIndex: 1 },
@@ -206,4 +241,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.pill,
   },
+  ctaIconOnly: { paddingHorizontal: Spacing.one },
 });
