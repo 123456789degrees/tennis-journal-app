@@ -12,6 +12,7 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { fetchDrillVideos, shortenForSearch, type ChannelBias, type DrillVideo } from '@/data/drill-videos';
 import { forceRefreshPracticeInsights, refreshPracticeInsights } from '@/data/insights';
 import type { PracticeInsight, VideoFeedback } from '@/data/models';
+import { PARTNER_DRILLS } from '@/data/partner-drills';
 import { listInsights, listVideoFeedback, saveInsight, saveVideoFeedback } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
@@ -42,6 +43,7 @@ export default function PracticeScreen() {
   const [videoFeedback, setVideoFeedback] = useState<VideoFeedback[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  const [partnerDrillsOpen, setPartnerDrillsOpen] = useState(false);
   // A ref (not state) so the "already fetched?" check stays correct even
   // when called from a useFocusEffect callback holding a stale closure —
   // refs are a stable mutable box every closure reads the same live value
@@ -357,6 +359,46 @@ export default function PracticeScreen() {
             );
           })
         )}
+
+        <Pressable
+          style={styles.partnerDrillsHeader}
+          onPress={() => setPartnerDrillsOpen((open) => !open)}
+        >
+          <ThemedView style={styles.titleLeft}>
+            <Ionicons name="people-outline" size={20} color={theme.primary} />
+            <ThemedText type="smallBold">Partner drills &amp; tiebreak twists</ThemedText>
+          </ThemedView>
+          <Ionicons
+            name={partnerDrillsOpen ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={theme.textSecondary}
+          />
+        </Pressable>
+
+        {partnerDrillsOpen ? (
+          <ThemedView style={styles.partnerDrillsBody}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Live-ball games to play with a hitting partner any time — not tied to your current
+              nudge above.
+            </ThemedText>
+            {(['Live-ball games', 'Tiebreak twists'] as const).map((category) => (
+              <ThemedView key={category} style={styles.partnerDrillCategory}>
+                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                  {category}
+                </ThemedText>
+                {PARTNER_DRILLS.filter((d) => d.category === category).map((drill) => (
+                  <Card key={drill.id} style={styles.partnerDrillCard}>
+                    <ThemedText type="smallBold">{drill.title}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {drill.description}
+                    </ThemedText>
+                  </Card>
+                ))}
+              </ThemedView>
+            ))}
+          </ThemedView>
+        ) : null}
+
         <Copyright />
       </ScrollView>
     </SafeAreaView>
@@ -411,4 +453,14 @@ const styles = StyleSheet.create({
   },
   videoThumbFallback: { alignItems: 'center', justifyContent: 'center' },
   videoTitle: { lineHeight: 16 },
+  partnerDrillsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  partnerDrillsBody: { gap: Spacing.three },
+  partnerDrillCategory: { gap: Spacing.two },
+  partnerDrillCard: { gap: Spacing.half },
 });

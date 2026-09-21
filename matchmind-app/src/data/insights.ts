@@ -35,6 +35,12 @@ interface KeywordRule {
   defaultSearchQuery: string;
 }
 
+// Every drill below is something you do WITH a partner, feeding or playing
+// out real points — not solo repetition against a wall or ball machine. A
+// friend testing the app said the drills felt disconnected from "real life
+// situations"; the fix is games with actual stakes (a rally that's live,
+// a point that's won or lost, a score that moves), even when the practice
+// point is still a specific technical fix.
 const RULES: KeywordRule[] = [
   {
     keyword: /backhand/i,
@@ -42,21 +48,21 @@ const RULES: KeywordRule[] = [
     variants: [
       {
         keyword: /power|weak|soft|no pace|lacks? pace|pushing it/i,
-        drill: 'Backhand power drill — focus on full shoulder turn and finishing the swing high; 15 reps at 80% pace prioritizing racket-head speed over just making contact.',
+        drill: 'Cross-court backhand battle — rally backhand-to-backhand with a partner; only a shot with real pace past the service line wins the point, anything soft or floaty loses it outright. Play to 11, win by 2.',
         searchQuery: 'backhand power drill',
       },
       {
         keyword: /short|shallow|depth|sitting up|sitter/i,
-        drill: 'Backhand depth drill — aim to land 15 in a row past the service line, inside the baseline.',
+        drill: 'Backhand depth game — cross-court backhand rally with a partner; any ball landing short of the service line loses the point immediately. First to 11.',
         searchQuery: 'backhand depth drill',
       },
       {
         keyword: /slice|flat|spin|net.{0,15}(a lot|too many)/i,
-        drill: 'Topspin backhand drill — brush up the back of the ball on every rep until margin over the net feels automatic.',
+        drill: 'Topspin-only backhand rally — cross-court with a partner, but a shot with visible slice or a flat, low-margin ball restarts the point instead of counting. Play to 11 and see how many rallies you actually win clean.',
         searchQuery: 'topspin backhand drill',
       },
     ],
-    defaultDrill: 'Cross-court backhand consistency — hit 20 in a row, then work the inside-out forehand to run around it.',
+    defaultDrill: 'Cross-court backhand battle — rally backhand cross-court only with a partner, first to 15 clean cross-court balls wins the game; loser starts the next one down 0-3.',
     defaultSearchQuery: 'backhand consistency drill',
   },
   {
@@ -65,21 +71,21 @@ const RULES: KeywordRule[] = [
     variants: [
       {
         keyword: /power|weak|soft|no pace|lacks? pace|floaty|floating/i,
-        drill: 'Forehand power drill — hip and shoulder rotation into every ball, full follow-through over the shoulder; 15 reps at 80% pace focused on racket-head speed, not just clean contact.',
+        drill: 'Cross-court forehand battle — rally forehand-to-forehand with a partner; only a shot with real pace past the service line wins the point, a soft or floaty ball loses it outright. Play to 11, win by 2.',
         searchQuery: 'forehand power drill',
       },
       {
         keyword: /short|shallow|depth|sitting up|sitter/i,
-        drill: 'Forehand depth drill — 15 balls in a row landing past the service line, inside the baseline.',
+        drill: 'Forehand depth game — cross-court forehand rally with a partner; any ball landing short of the service line loses the point immediately. First to 11.',
         searchQuery: 'forehand depth drill',
       },
       {
         keyword: /flat|spin|net.{0,15}(a lot|too many)/i,
-        drill: 'Topspin forehand drill — brush up over the ball on every rep to build margin over the net.',
+        drill: 'Topspin-only forehand rally — cross-court with a partner, but a flat, low-margin ball restarts the point instead of counting. Play to 11 and see how many rallies you actually win clean.',
         searchQuery: 'topspin forehand drill',
       },
     ],
-    defaultDrill: 'Forehand depth and consistency drill — 20 balls cross-court, then 20 down the line.',
+    defaultDrill: 'Cross-court forehand battle — 20 balls cross-court with a partner playing it live, then switch to playing out full points starting cross-court only.',
     defaultSearchQuery: 'forehand consistency drill',
   },
   {
@@ -88,16 +94,16 @@ const RULES: KeywordRule[] = [
     variants: [
       {
         keyword: /power|weak|soft|no pace|lacks? pace|slow/i,
-        drill: 'First-serve power drill — full trophy pose and leg drive on every rep; 15 first serves at high effort focused on racket-head speed at contact, not just getting it in.',
+        drill: 'First-serve scoring game — partner returns everything live; you score +1 for an ace or unreturned first serve, 0 if it comes back soft, -1 for a fault. Serve 10 and see if you finish net positive.',
         searchQuery: 'tennis serve power drill',
       },
       {
         keyword: /double fault|fault|consisten|missing|out|net/i,
-        drill: 'Serve consistency drill — 20 serves at 75% pace, aiming just for a clean, repeatable toss and swing before adding pace back.',
+        drill: 'Serve-and-3 pressure game — partner returns live and you play the point out for real, but a first serve only "counts" as a good hold if you win the point within the first three shots. Track your real first-serve percentage under that pressure, not just an isolated toss.',
         searchQuery: 'tennis serve consistency drill',
       },
     ],
-    defaultDrill: 'Second-serve spin and placement — 20 serves at 75% pace, aiming for the corners.',
+    defaultDrill: 'Second-serve target game — partner returns live; call a corner (wide/body/T) before each serve and only score it as a win if you hit that target and win the point outright.',
     defaultSearchQuery: 'second serve spin drill',
   },
   {
@@ -106,16 +112,16 @@ const RULES: KeywordRule[] = [
     variants: [
       {
         keyword: /recovery|reset|center/i,
-        drill: 'Recovery footwork drill — split-step and recover to center after every shot before the next ball, walk-through pace first.',
+        drill: 'Live recovery drill — partner feeds to alternating corners and you play the point out live; every ball you must split-step and fully recover to center before the next one arrives, or the point gets replayed against you.',
         searchQuery: 'tennis recovery footwork drill',
       },
       {
         keyword: /slow|late|behind|reaction/i,
-        drill: 'Reaction footwork drill — split-step timed to the opponent contact, then explosive first step to a fed ball.',
+        drill: 'Reaction rally — partner mixes cross-court and down-the-line feeds mid-point unpredictably while you play it out live; track how many times you’re late on the first step.',
         searchQuery: 'tennis reaction footwork drill',
       },
     ],
-    defaultDrill: 'Split-step and recovery footwork ladder drills before hitting live points.',
+    defaultDrill: 'Two-ball-then-live drill — partner feeds two balls to opposite corners before every point starts live, forcing real recovery before you actually play it out.',
     defaultSearchQuery: 'tennis footwork ladder drill',
   },
   {
@@ -124,11 +130,11 @@ const RULES: KeywordRule[] = [
     variants: [
       {
         keyword: /power|hard|smash|overhead/i,
-        drill: 'Overhead and put-away drill — 15 reps finishing volleys with authority instead of just blocking them back.',
+        drill: 'Approach-and-finish game — partner feeds a short ball, you approach and must finish the next shot as a real volley or overhead putaway to win the point; a soft block-back doesn’t count.',
         searchQuery: 'tennis overhead put away drill',
       },
     ],
-    defaultDrill: 'Volley punch drill at the net, focusing on a short, compact swing.',
+    defaultDrill: 'Net pressure game — play out live points starting with you at net; partner tries to pass or lob you, and you must finish with a real volley (not a block) to win the point.',
     defaultSearchQuery: 'tennis volley drill',
   },
 ];
