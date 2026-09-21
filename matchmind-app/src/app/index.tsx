@@ -44,17 +44,20 @@ export default function Index() {
     });
   }, []);
 
-  // Site-wide totals for the "N players / N matches logged" counters below,
-  // via a security-definer RPC (see supabase/schema.sql: site_stats()) since
-  // normal row-level security scopes every other query to one player's own
-  // data. Counted up rather than shown instantly once this section scrolls
-  // into view, purely for effect.
-  const [stats, setStats] = useState<{ users: number; matches: number } | null>(null);
+  // Live total matches logged, via a security-definer RPC (see
+  // supabase/schema.sql: site_stats()) since normal row-level security
+  // scopes every other query to one player's own data. Counted up rather
+  // than shown instantly once this section scrolls into view, purely for
+  // effect. (site_stats() also returns a user count, but the landing page
+  // just states "100+ players" as a fixed line rather than a live account
+  // count — the real account count is a small, still-growing number that
+  // doesn't represent actual usage well on its own.)
+  const [stats, setStats] = useState<{ matches: number } | null>(null);
   useEffect(() => {
     supabase.rpc('site_stats').then(({ data, error }) => {
       const row = !error && data ? data[0] : null;
       if (row) {
-        setStats({ users: Number(row.userCount) || 0, matches: Number(row.matchCount) || 0 });
+        setStats({ matches: Number(row.matchCount) || 0 });
       }
     });
   }, []);
@@ -87,12 +90,11 @@ export default function Index() {
     checkStatsVisible();
   };
 
-  const animatedUsers = useCountUp(stats?.users ?? 0, statsTriggered);
   const animatedMatches = useCountUp(stats?.matches ?? 0, statsTriggered);
   // Fixed, not live: how many players in my USTA section were already using
   // MatchMind before it even had real accounts (back when everything just
   // lived in local browser storage, with no server to count anyone). True,
-  // but unlike the two counters above it can't come from a database query —
+  // but unlike the counter above it can't come from a database query —
   // there's nothing to query — so it's a constant, not a growing tracker.
   const animatedEarlyUsers = useCountUp(100, statsTriggered);
 
@@ -102,19 +104,19 @@ export default function Index() {
 
   const steps = [
     {
-      icon: 'flash-outline' as const,
-      title: 'Log a match in seconds',
-      body: 'Score, a couple of quick scouting notes on how they played — type it or just talk. About 20 seconds, even right after a tough loss.',
+      icon: <MaterialCommunityIcons name="tennis-ball" size={22} color={theme.primary} />,
+      title: 'Track',
+      body: 'Record the key moments and statistics from your matches.',
     },
     {
-      icon: 'search-outline' as const,
-      title: 'Every opponent, remembered',
-      body: "Search any name and instantly see your head-to-head record, their playstyle, and what worked last time — even if it was a year ago.",
+      icon: <MaterialCommunityIcons name="brain" size={22} color={theme.primary} />,
+      title: 'Analyze',
+      body: 'Let AI help identify strengths, weaknesses, and patterns in your performance.',
     },
     {
-      icon: 'sparkles-outline' as const,
-      title: 'Get an automatic practice nudge',
-      body: "MatchMind looks across your own recent matches on its own and points out a pattern worth drilling — with a real video to go with it.",
+      icon: <Ionicons name="trending-up-outline" size={22} color={theme.primary} />,
+      title: 'Improve',
+      body: 'Turn match insights into better preparation for your next match.',
     },
   ];
 
@@ -199,14 +201,6 @@ export default function Index() {
             </ThemedView>
             <ThemedView style={styles.statItem}>
               <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
-                {animatedUsers.toLocaleString()}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                players with an account
-              </ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.statItem}>
-              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
                 {animatedMatches.toLocaleString()}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
@@ -216,59 +210,15 @@ export default function Index() {
           </ThemedView>
         </ThemedView>
 
-        {/* Why I built this */}
-        <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
-          <ThemedView style={styles.storyInner}>
-            <ThemedText type="title" style={styles.sectionTitle}>
-              Why I built this
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>
-              My mom used to make me write in a tennis journal after every tournament match. I
-              hated it. Right after a tough loss I&apos;m drained, kind of annoyed, and the last
-              thing I want to do is sit down and relive it in writing — so it never actually
-              happened. The journal just sat there, empty.
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>
-              But here&apos;s the part that actually got me thinking: even when I{' '}
-              <ThemedText style={styles.storyItalic}>did</ThemedText> remember an opponent,
-              remembering wasn&apos;t enough on its own. I played a pusher once — I knew exactly
-              what his game was, get everything back and wait for me to miss — and I still lost,
-              because I tried to force the issue, overhit, and had no idea how to actually fix it
-              in the moment. Knowing a weakness and knowing how to beat it turned out to be two
-              completely different things.
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>
-              So I asked around — teammates in my own USTA section who play tournaments
-              constantly. Turns out I wasn&apos;t the only one: they kept a paper journal too, only
-              because their mom made them, and they didn&apos;t like it either. That part was
-              universal. What surprised me was the other half: they didn&apos;t feel like they
-              needed tactical advice — most experienced players already know how to play someone.
-              What they were actually missing wasn&apos;t strategy. It was keeping any record at
-              all.
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>
-              So that&apos;s what MatchMind became: an app built to make{' '}
-              <ThemedText type="smallBold" style={styles.storyEmphasis}>
-                capturing a match effortless first
-              </ThemedText>{' '}
-              — type it or just talk for twenty seconds — and to remember all of it for you, so
-              the next time you draw someone&apos;s name again, your whole history with them is
-              already sitting there. The AI tips on how to beat them are still in there, as a bonus
-              for when you want them — but the real point is that you&apos;ll actually keep this
-              up, unlike a paper journal that gets forced on you and then ignored.
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
-
         {/* How it works */}
         <ThemedView style={[styles.band, { backgroundColor: theme.backgroundSelected }]}>
           <ThemedView style={styles.howInner}>
             <ThemedText type="title" style={styles.sectionTitle}>
               How it works
+            </ThemedText>
+            <ThemedText style={styles.howIntro}>
+              MatchMind helps tennis players record their matches, understand their performance,
+              and use AI-powered insights to discover patterns in their game.
             </ThemedText>
             <ThemedView style={styles.stepsRow}>
               {steps.map((step, i) => (
@@ -279,7 +229,7 @@ export default function Index() {
                         {i + 1}
                       </ThemedText>
                     </ThemedView>
-                    <Ionicons name={step.icon} size={22} color={theme.primary} />
+                    {step.icon}
                   </ThemedView>
                   <ThemedText type="smallBold">{step.title}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
@@ -288,6 +238,34 @@ export default function Index() {
                 </Card>
               ))}
             </ThemedView>
+          </ThemedView>
+        </ThemedView>
+
+        {/* Why I built this */}
+        <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
+          <ThemedView style={styles.storyInner}>
+            <ThemedText type="title" style={styles.sectionTitle}>
+              Built by a tennis player, for tennis players.
+            </ThemedText>
+
+            <ThemedText style={styles.storyPara}>
+              MatchMind started with a simple question:
+            </ThemedText>
+
+            <ThemedText style={[styles.storyPara, styles.storyItalic, styles.storyQuestion]}>
+              &quot;What can I learn from my last match?&quot;
+            </ThemedText>
+
+            <ThemedText style={styles.storyPara}>
+              As a junior tennis player, I wanted a better way to understand my matches beyond
+              simply looking at the final score.
+            </ThemedText>
+
+            <ThemedText style={styles.storyPara}>So I built MatchMind.</ThemedText>
+
+            <ThemedText type="smallBold" style={[styles.storyPara, styles.storyEmphasis]}>
+              Your match. Your data. Your next improvement.
+            </ThemedText>
           </ThemedView>
         </ThemedView>
 
@@ -392,7 +370,9 @@ const styles = StyleSheet.create({
   whoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   storyPara: { fontSize: 16, lineHeight: 25 },
   storyItalic: { fontStyle: 'italic' },
+  storyQuestion: { fontSize: 19 },
   storyEmphasis: { fontSize: 16 },
+  howIntro: { fontSize: 16, lineHeight: 24, marginBottom: Spacing.one },
   howInner: {
     width: '100%',
     maxWidth: MaxContentWidth,
