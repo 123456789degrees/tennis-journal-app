@@ -2,7 +2,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Image,
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { ZoomableImage } from '@/components/zoomable-image';
 import { getCurrentPlayerId } from '@/data/storage';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useTheme } from '@/hooks/use-theme';
@@ -241,7 +241,7 @@ export default function Index() {
                   <ThemedText type="small" themeColor="textSecondary">
                     {step.body}
                   </ThemedText>
-                  <Image source={step.image} style={styles.stepImage} resizeMode="contain" />
+                  <ZoomableImage source={step.image} style={styles.stepImage} />
                 </Card>
               ))}
             </ThemedView>
