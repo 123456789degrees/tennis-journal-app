@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -25,6 +26,11 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  // Off by default so a shoulder-surfed screen doesn't show a live typed
+  // password, but a tap reveals it — a friend testing the app on her phone
+  // said a browser-autofilled password left her unsure what was actually in
+  // the field, with no way to check before submitting.
+  const [showPassword, setShowPassword] = useState(false);
 
   const passwordRef = useRef<TextInput>(null);
 
@@ -102,6 +108,8 @@ export default function LoginScreen() {
             placeholderTextColor={theme.textSecondary}
             autoCapitalize="none"
             keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
             value={email}
             onChangeText={setEmail}
             returnKeyType="next"
@@ -111,17 +119,36 @@ export default function LoginScreen() {
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Password
           </ThemedText>
-          <TextInput
-            ref={passwordRef}
-            style={[styles.input, inputStyle]}
-            placeholder="••••••"
-            placeholderTextColor={theme.textSecondary}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            returnKeyType="go"
-            onSubmitEditing={() => (mode === 'signup' ? handleCreateAccount() : handleSignIn())}
-          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              ref={passwordRef}
+              style={[styles.input, styles.passwordInput, inputStyle, { marginTop: 0 }]}
+              placeholder="••••••"
+              placeholderTextColor={theme.textSecondary}
+              secureTextEntry={!showPassword}
+              // "new-password"/newPassword for signup so the browser treats
+              // this as a password being created (and won't try to offer an
+              // unrelated saved one); "current-password"/password for
+              // signing in to an existing account.
+              textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              value={password}
+              onChangeText={setPassword}
+              returnKeyType="go"
+              onSubmitEditing={() => (mode === 'signup' ? handleCreateAccount() : handleSignIn())}
+            />
+            <Pressable
+              style={[styles.showPasswordButton, { borderColor: theme.border }]}
+              onPress={() => setShowPassword((s) => !s)}
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color={theme.textSecondary}
+              />
+            </Pressable>
+          </View>
 
           {error ? (
             <ThemedText style={[styles.error, { color: theme.danger }]}>{error}</ThemedText>
@@ -192,6 +219,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   fieldSpacing: { marginTop: Spacing.three },
+  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, marginTop: Spacing.one },
+  passwordInput: { flex: 1 },
+  showPasswordButton: {
+    borderWidth: 1,
+    borderRadius: Radius.small,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+  },
   error: { marginTop: Spacing.three },
   buttonSpacing: { marginTop: Spacing.four },
   switchModeRow: { marginTop: Spacing.three, alignItems: 'center' },
