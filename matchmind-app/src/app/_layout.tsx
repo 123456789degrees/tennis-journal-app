@@ -2,10 +2,32 @@ import { Analytics } from '@vercel/analytics/react';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { Platform, StyleSheet, useColorScheme } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
-import { Colors } from '@/constants/theme';
+import { ThemedText } from '@/components/themed-text';
+import { Logo } from '@/components/ui/logo';
+import { Colors, Spacing } from '@/constants/theme';
+
+// Site-wide gate while actively editing — blocks every route, including
+// already-logged-in users, not just the public landing page. Flip back to
+// false (or delete this block) to bring the whole site back.
+const MAINTENANCE_MODE = true;
+
+function MaintenanceScreen({ theme }: { theme: typeof Colors.light | typeof Colors.dark }) {
+  return (
+    <SafeAreaView style={[styles.maintenanceRoot, { backgroundColor: theme.primary }]}>
+      <Logo size={100} />
+      <ThemedText type="title" style={[styles.maintenanceTitle, { color: theme.primaryText }]}>
+        Under construction
+      </ThemedText>
+      <ThemedText style={[styles.maintenanceBody, { color: theme.primaryText }]}>
+        We&apos;re making some updates to MatchMind. Check back soon!
+      </ThemedText>
+    </SafeAreaView>
+  );
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,6 +40,10 @@ export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
+
+  if (MAINTENANCE_MODE) {
+    return <MaintenanceScreen theme={theme} />;
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -44,3 +70,15 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  maintenanceRoot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.three,
+  },
+  maintenanceTitle: { fontSize: 28, textAlign: 'center' },
+  maintenanceBody: { fontSize: 16, textAlign: 'center', opacity: 0.95, maxWidth: 360 },
+});
