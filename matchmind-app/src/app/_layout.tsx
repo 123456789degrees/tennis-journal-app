@@ -12,8 +12,8 @@ import { Colors, Spacing } from '@/constants/theme';
 
 // Site-wide gate while actively editing — blocks every route, including
 // already-logged-in users, not just the public landing page. Flip back to
-// false (or delete this block) to bring the whole site back.
-const MAINTENANCE_MODE = true;
+// true to take the whole site down again.
+const MAINTENANCE_MODE = false;
 
 function MaintenanceScreen({ theme }: { theme: typeof Colors.light | typeof Colors.dark }) {
   return (
