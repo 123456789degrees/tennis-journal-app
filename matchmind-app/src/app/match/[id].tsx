@@ -236,7 +236,9 @@ const styles = StyleSheet.create({
   heading: { fontSize: 22 },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   scoutingHeading: { marginBottom: Spacing.one },
-  shotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  // alignItems: 'flex-start' — otherwise every box in a row stretches to
+  // match the tallest sibling, leaving a lot of empty space under short text.
+  shotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, alignItems: 'flex-start' },
   fieldSpacing: { marginTop: Spacing.one },
   actionsRow: { flexDirection: 'row', gap: Spacing.two },
   actionFlex: { flex: 1 },

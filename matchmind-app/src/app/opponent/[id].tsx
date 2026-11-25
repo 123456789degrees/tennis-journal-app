@@ -191,7 +191,9 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, marginTop: Spacing.two },
   aiCaptionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   aiCaptionText: { flex: 1 },
-  shotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  // alignItems: 'flex-start' — otherwise every box in a row stretches to
+  // match the tallest sibling, leaving a lot of empty space under short text.
+  shotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, alignItems: 'flex-start' },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   emptyText: { paddingVertical: Spacing.two },
   matchRow: {

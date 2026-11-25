@@ -41,6 +41,11 @@ export function StatBox({ label, value }: { label: StatLabel; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  card: { flexBasis: 220, flexGrow: 1 },
+  // A fixed width, not flexBasis+flexGrow — growing meant a half-full
+  // trailing row (e.g. just "What went well" + "What to improve") stretched
+  // those two boxes to fill the whole row width even with barely any text
+  // in them. Fixed width keeps every box the same clean, moderate size
+  // regardless of how many land in the last row.
+  card: { width: 240 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
 });
