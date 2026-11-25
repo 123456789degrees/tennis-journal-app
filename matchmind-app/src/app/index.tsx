@@ -1,7 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Image,
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -18,12 +20,19 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { Wordmark } from '@/components/ui/wordmark';
-import { BrandFonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import {
+  BrandFonts,
+  MaxContentWidth,
+  Radius,
+  Spacing,
+} from '@/constants/theme';
 import { getCurrentPlayerId } from '@/data/storage';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useTheme } from '@/hooks/use-theme';
 import { enforceInactivityTimeout } from '@/lib/session-activity';
 import { supabase } from '@/lib/supabase';
+
+const MATCHES_STAT_THRESHOLD = 50;
 
 // This is the first thing anyone sees at matchmindtennis.com now — signed
 // in or not. A signed-in player gets a "Go to your matches" shortcut
@@ -57,7 +66,8 @@ export default function Index() {
     const sectionY = statsSectionYRef.current;
     if (sectionY == null || viewportHeightRef.current === 0) return;
     // Fires once the top of the stats band is ~60px into the viewport.
-    if (scrollYRef.current + viewportHeightRef.current > sectionY + 60) setStatsTriggered(true);
+    if (scrollYRef.current + viewportHeightRef.current > sectionY + 60)
+      setStatsTriggered(true);
   };
 
   const onRootLayout = (e: LayoutChangeEvent) => {
@@ -100,15 +110,17 @@ export default function Index() {
     {
       icon: <Ionicons name="mic-outline" size={22} color={theme.primary} />,
       title: 'Type it or speak it',
-      body: "Log a match by typing it out or just talking — no notebook, no excuse to put it off.",
+      body: 'Log a match by typing it out or just talking — no notebook, no excuse to put it off.',
     },
     {
       icon: <Ionicons name="cloud-outline" size={22} color={theme.primary} />,
       title: 'Access anywhere, anytime',
-      body: "Saved to your account, not a notebook you can lose, forget at home, or never open again.",
+      body: 'Saved to your account, not a notebook you can lose, forget at home, or never open again.',
     },
     {
-      icon: <MaterialCommunityIcons name="brain" size={22} color={theme.primary} />,
+      icon: (
+        <MaterialCommunityIcons name="brain" size={22} color={theme.primary} />
+      ),
       title: 'AI-generated strategies & tips',
       body: 'Real, specific tactics generated from your actual matches and playstyle — not generic advice.',
     },
@@ -120,182 +132,302 @@ export default function Index() {
   ];
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: theme.background }]}
-      onLayout={onRootLayout}
-    >
-      <ScrollView onScroll={onScroll} scrollEventThrottle={16}>
-        {/* Hero */}
-        <ThemedView style={[styles.band, styles.heroBand, { backgroundColor: theme.primary }]}>
-          <ThemedView style={styles.topNav}>
-            <ThemedView style={styles.topNavBrand}>
-              <Logo size={30} />
-              <Wordmark size={20} />
+    <>
+      <Head>
+        <title>MatchMind — Tennis match journal &amp; AI practice plans</title>
+        <meta
+          name="description"
+          content="Log your tennis matches by typing or talking, scout your opponents, and get AI-generated practice plans built from your own playstyle and match history."
+        />
+      </Head>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: theme.background }]}
+        onLayout={onRootLayout}
+      >
+        <ScrollView onScroll={onScroll} scrollEventThrottle={16}>
+          {/* Hero */}
+          <ThemedView
+            style={[
+              styles.band,
+              styles.heroBand,
+              { backgroundColor: theme.primary },
+            ]}
+          >
+            <ThemedView style={styles.topNav}>
+              <ThemedView style={styles.topNavBrand}>
+                <Logo size={30} />
+                <Wordmark size={20} />
+              </ThemedView>
+              <Pressable
+                style={[
+                  styles.topNavButton,
+                  { borderColor: theme.primaryText },
+                ]}
+                onPress={isLoggedIn ? goToApp : goToLogin}
+              >
+                <ThemedText
+                  type="smallBold"
+                  style={{ color: theme.primaryText }}
+                >
+                  {isLoggedIn ? 'Go to your matches' : 'Log in'}
+                </ThemedText>
+              </Pressable>
             </ThemedView>
-            <Pressable
-              style={[styles.topNavButton, { borderColor: theme.primaryText }]}
-              onPress={isLoggedIn ? goToApp : goToLogin}
-            >
-              <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-                {isLoggedIn ? 'Go to your matches' : 'Log in'}
-              </ThemedText>
-            </Pressable>
-          </ThemedView>
 
-          <ThemedView style={styles.heroInner}>
-            <Logo size={100} />
-            <Wordmark size={34} />
-            <ThemedText type="title" style={[styles.heroHeadline, { color: theme.primaryText }]}>
-              Mind Over Match.
-            </ThemedText>
-            <ThemedText style={[styles.heroTagline, { color: theme.primaryText }]}>
-              Turn every tennis match into a smarter{' '}
-              <ThemedText style={[styles.heroTaglineAccent, { color: theme.accent }]}>
-                practice plan.
+            <ThemedView style={styles.heroInner}>
+              <ThemedText style={[styles.heroLabel, { color: theme.accent }]}>
+                Mind over match
               </ThemedText>
-            </ThemedText>
-            <ThemedText style={[styles.heroSubhead, { color: theme.primaryText }]}>
-              MatchMind helps tennis players record their matches, understand their performance,
-              and use AI-powered insights to discover patterns in their game.
-            </ThemedText>
-            <ThemedView style={styles.heroButtons}>
-              {isLoggedIn ? (
-                <Button
-                  label="Go to your matches"
-                  icon="arrow-forward-circle-outline"
-                  variant="accent"
-                  size="large"
-                  onPress={goToApp}
-                />
-              ) : (
-                <>
+              <ThemedText
+                type="title"
+                style={[styles.heroHeadline, { color: theme.primaryText }]}
+              >
+                Turn every tennis match into a smarter{' '}
+                <ThemedText
+                  style={[styles.heroHeadlineAccent, { color: theme.accent }]}
+                >
+                  practice plan.
+                </ThemedText>
+              </ThemedText>
+              <ThemedText
+                style={[styles.heroSubhead, { color: theme.primaryText }]}
+              >
+                MatchMind helps tennis players record their matches, understand
+                their performance, and use AI-powered insights to discover
+                patterns in their game.
+              </ThemedText>
+              <ThemedView style={styles.heroButtons}>
+                {isLoggedIn ? (
                   <Button
-                    label="Get started — it's free"
+                    label="Go to your matches"
                     icon="arrow-forward-circle-outline"
+                    iconPosition="right"
                     variant="accent"
                     size="large"
-                    onPress={goToSignup}
+                    onPress={goToApp}
                   />
+                ) : (
+                  <>
+                    <Button
+                      label="Get started — it's free"
+                      icon="arrow-forward-circle-outline"
+                      iconPosition="right"
+                      variant="accent"
+                      size="large"
+                      onPress={goToSignup}
+                    />
+                    <ThemedText
+                      type="linkPrimary"
+                      style={[styles.signInLink, { color: theme.primaryText }]}
+                      onPress={goToLogin}
+                    >
+                      Already have an account? Sign in
+                    </ThemedText>
+                  </>
+                )}
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
+
+          {/* Stats */}
+          <ThemedView
+            style={[styles.band, { backgroundColor: theme.background }]}
+            onLayout={onStatsLayout}
+          >
+            <ThemedView style={styles.statsRow}>
+              <ThemedView style={styles.statItem}>
+                <ThemedText
+                  style={[styles.statNumber, { color: theme.primary }]}
+                >
+                  {animatedEarlyUsers.toLocaleString()}+
+                </ThemedText>
+                <ThemedText
+                  type="small"
+                  themeColor="textSecondary"
+                  style={styles.statLabel}
+                >
+                  players using this
+                </ThemedText>
+              </ThemedView>
+              {/* A small matches-logged number next to a healthy player count
+                reads as "people sign up and don't come back" — only worth
+                showing once it's big enough to read as real usage. */}
+              {matchCount >= MATCHES_STAT_THRESHOLD ? (
+                <ThemedView style={styles.statItem}>
                   <ThemedText
-                    type="linkPrimary"
-                    style={[styles.signInLink, { color: theme.primaryText }]}
-                    onPress={goToLogin}
+                    style={[styles.statNumber, { color: theme.primary }]}
                   >
-                    Already have an account? Sign in
+                    {animatedMatches.toLocaleString()}
                   </ThemedText>
-                </>
-              )}
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-
-        {/* Stats */}
-        <ThemedView
-          style={[styles.band, { backgroundColor: theme.background }]}
-          onLayout={onStatsLayout}
-        >
-          <ThemedView style={styles.statsRow}>
-            <ThemedView style={styles.statItem}>
-              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
-                {animatedEarlyUsers.toLocaleString()}+
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                players using this
-              </ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.statItem}>
-              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
-                {animatedMatches.toLocaleString()}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                matches logged so far
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-
-        {/* My Story */}
-        <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
-          <ThemedView style={styles.storyInner}>
-            <ThemedText type="title" style={styles.sectionTitle}>
-              My Story
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>
-              My mom used to make me write in a tennis journal after every match. I felt tired and
-              unmotivated — the last thing I wanted to do right after playing was sit down and
-              write about it. And even when I did, no one actually analyzed the match: it just sat
-              in a notebook, easy to forget, with no way to go back and review it later.
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>So I built MatchMind.</ThemedText>
-
-            <ThemedText type="smallBold" style={[styles.storyPara, styles.storyEmphasis]}>
-              Your match. Your data. Your next improvement.
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
-
-        {/* Solutions */}
-        <ThemedView style={[styles.band, { backgroundColor: theme.backgroundSelected }]}>
-          <ThemedView style={styles.howInner}>
-            <ThemedText type="title" style={styles.sectionTitle}>
-              Solutions
-            </ThemedText>
-            <ThemedView style={styles.stepsRow}>
-              {solutions.map((solution) => (
-                <Card key={solution.title} style={styles.stepCard}>
-                  <ThemedView style={styles.cardHeaderRow}>{solution.icon}</ThemedView>
-                  <ThemedText type="smallBold">{solution.title}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {solution.body}
+                  <ThemedText
+                    type="small"
+                    themeColor="textSecondary"
+                    style={styles.statLabel}
+                  >
+                    matches logged so far
                   </ThemedText>
-                </Card>
-              ))}
+                </ThemedView>
+              ) : null}
             </ThemedView>
           </ThemedView>
-        </ThemedView>
 
-        {/* Impact */}
-        <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
-          <ThemedView style={styles.storyInner}>
-            <ThemedView style={styles.whoRow}>
-              <MaterialCommunityIcons name="tennis" size={22} color={theme.primary} />
-              <ThemedText type="title" style={styles.sectionTitleInline}>
-                Impact
+          {/* My Story */}
+          <ThemedView
+            style={[styles.band, { backgroundColor: theme.background }]}
+          >
+            <ThemedView style={styles.storyInner}>
+              <ThemedText type="title" style={styles.sectionTitle}>
+                My Story
+              </ThemedText>
+
+              <ThemedText style={styles.storyPara}>
+                My mom used to make me write in a tennis journal after every
+                match. I felt tired and unmotivated — the last thing I wanted to
+                do right after playing was sit down and write about it. And even
+                when I did, no one actually analyzed the match: it just sat in a
+                notebook, easy to forget, with no way to go back and review it
+                later.
+              </ThemedText>
+
+              <ThemedText style={styles.storyPara}>
+                So I built MatchMind.
+              </ThemedText>
+
+              <ThemedText
+                style={[
+                  styles.storyPara,
+                  styles.storyQuote,
+                  { color: theme.textSecondary },
+                ]}
+              >
+                For tennis players who want to actually improve their matches —
+                not just log a score and move on.
+              </ThemedText>
+
+              <ThemedText
+                type="smallBold"
+                style={[styles.storyPara, styles.storyEmphasis]}
+              >
+                Your match. Your data. Your next improvement.
               </ThemedText>
             </ThemedView>
-            <ThemedText style={styles.storyPara}>
-              For tennis players who want to actually improve their matches — not just log a
-              score and move on.
-            </ThemedText>
           </ThemedView>
-        </ThemedView>
 
-        {/* Final CTA */}
-        <ThemedView style={[styles.band, styles.finalCtaBand, { backgroundColor: theme.primary }]}>
-          <ThemedView style={styles.storyInner}>
-            <ThemedText type="title" style={[styles.finalCtaHeadline, { color: theme.primaryText }]}>
-              {isLoggedIn
-                ? 'Ready to log your next match?'
-                : "Ready to actually keep a journal you'll use?"}
-            </ThemedText>
-            <Button
-              label={isLoggedIn ? 'Go to your matches' : "Get started — it's free"}
-              icon="arrow-forward-circle-outline"
-              variant="accent"
-              size="large"
-              fullWidth
-              onPress={isLoggedIn ? goToApp : goToSignup}
-            />
+          {/* Before / After */}
+          <ThemedView
+            style={[styles.band, { backgroundColor: theme.backgroundSelected }]}
+          >
+            <ThemedView style={styles.howInner}>
+              <ThemedText type="title" style={styles.sectionTitle}>
+                From notebook to insight
+              </ThemedText>
+              <ThemedText style={styles.storyPara}>
+                This is a real page from my old paper journal, and the exact
+                same match logged in MatchMind today.
+              </ThemedText>
+              <ThemedView style={styles.beforeAfterRow}>
+                <ThemedView style={styles.beforeAfterItem}>
+                  <ThemedText
+                    type="smallBold"
+                    themeColor="textSecondary"
+                    style={styles.beforeAfterLabel}
+                  >
+                    BEFORE
+                  </ThemedText>
+                  <Image
+                    source={require('../../assets/images/journal-before.jpg')}
+                    style={[styles.journalImage, { borderColor: theme.border }]}
+                    resizeMode="contain"
+                  />
+                </ThemedView>
+                <ThemedView style={styles.beforeAfterItem}>
+                  <ThemedText
+                    type="smallBold"
+                    themeColor="textSecondary"
+                    style={styles.beforeAfterLabel}
+                  >
+                    AFTER
+                  </ThemedText>
+                  <Image
+                    source={require('../../assets/images/journal-after.png')}
+                    style={[styles.appImage, { borderColor: theme.border }]}
+                    resizeMode="contain"
+                  />
+                </ThemedView>
+              </ThemedView>
+            </ThemedView>
           </ThemedView>
-        </ThemedView>
 
-        <ThemedView style={{ backgroundColor: theme.background }}>
-          <Copyright />
-        </ThemedView>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Solutions */}
+          <ThemedView
+            style={[styles.band, { backgroundColor: theme.backgroundSelected }]}
+          >
+            <ThemedView style={styles.howInner}>
+              <ThemedText type="title" style={styles.sectionTitle}>
+                Solutions
+              </ThemedText>
+              <ThemedView style={styles.stepsRow}>
+                {solutions.map((solution) => (
+                  <Card
+                    key={solution.title}
+                    style={[
+                      styles.stepCard,
+                      {
+                        backgroundColor: theme.background,
+                        borderColor: theme.background,
+                      },
+                    ]}
+                  >
+                    <ThemedView style={styles.cardHeaderRow}>
+                      {solution.icon}
+                    </ThemedView>
+                    <ThemedText type="smallBold">{solution.title}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {solution.body}
+                    </ThemedText>
+                  </Card>
+                ))}
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
+
+          {/* Final CTA */}
+          <ThemedView
+            style={[
+              styles.band,
+              styles.finalCtaBand,
+              { backgroundColor: theme.primary },
+            ]}
+          >
+            <ThemedView style={styles.storyInner}>
+              <ThemedText
+                type="title"
+                style={[styles.finalCtaHeadline, { color: theme.primaryText }]}
+              >
+                {isLoggedIn
+                  ? 'Ready to log your next match?'
+                  : "Ready to actually keep a journal you'll use?"}
+              </ThemedText>
+              <Button
+                label={
+                  isLoggedIn ? 'Go to your matches' : "Get started — it's free"
+                }
+                icon="arrow-forward-circle-outline"
+                iconPosition="right"
+                variant="accent"
+                size="large"
+                fullWidth
+                onPress={isLoggedIn ? goToApp : goToSignup}
+              />
+            </ThemedView>
+          </ThemedView>
+
+          <ThemedView style={{ backgroundColor: theme.background }}>
+            <Copyright />
+          </ThemedView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -327,20 +459,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
   },
-  heroHeadline: { textAlign: 'center', fontSize: 34, lineHeight: 40 },
-  heroTagline: {
+  heroLabel: {
     textAlign: 'center',
     fontFamily: BrandFonts.bodyBold,
-    fontSize: 19,
-    lineHeight: 26,
+    fontSize: 13,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  heroHeadline: {
+    textAlign: 'center',
+    fontSize: 32,
+    lineHeight: 40,
+    maxWidth: 620,
+  },
+  heroHeadlineAccent: {
+    fontFamily: BrandFonts.serifItalic,
+    fontSize: 36,
+  },
+  heroSubhead: {
+    textAlign: 'center',
+    fontSize: 17,
+    lineHeight: 24,
+    opacity: 0.95,
     maxWidth: 480,
   },
-  heroTaglineAccent: {
-    fontFamily: BrandFonts.serifItalic,
-    fontSize: 22,
+  heroButtons: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.one,
   },
-  heroSubhead: { textAlign: 'center', fontSize: 17, lineHeight: 24, opacity: 0.95, maxWidth: 480 },
-  heroButtons: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
   signInLink: { textDecorationLine: 'underline', opacity: 0.9 },
   statsRow: {
     width: '100%',
@@ -353,30 +500,69 @@ const styles = StyleSheet.create({
     gap: Spacing.six,
   },
   statItem: { alignItems: 'center', minWidth: 160, gap: Spacing.one },
-  statNumber: { fontFamily: BrandFonts.displayExtraBold, fontSize: 44, lineHeight: 50 },
+  statNumber: {
+    fontFamily: BrandFonts.displayExtraBold,
+    fontSize: 44,
+    lineHeight: 50,
+  },
   statLabel: { textAlign: 'center' },
+  // My Story, Before/After, Solutions and the Final CTA all share this same
+  // container (width + padding) so their left edges and heading positions
+  // line up with each other when scrolling down the page.
   storyInner: {
     width: '100%',
-    maxWidth: 720,
+    maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.five,
-    gap: Spacing.three,
+    gap: 18,
   },
-  sectionTitle: { fontSize: 26, marginBottom: Spacing.one },
-  sectionTitleInline: { fontSize: 26 },
-  whoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
-  storyPara: { fontSize: 16, lineHeight: 25 },
+  sectionTitle: { fontSize: 26, lineHeight: 32 },
+  storyPara: { fontSize: 16, lineHeight: 25, maxWidth: 640 },
+  storyQuote: {
+    fontFamily: BrandFonts.serifItalic,
+    fontSize: 19,
+    lineHeight: 27,
+  },
   storyEmphasis: { fontSize: 16 },
   howInner: {
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.five,
-    gap: Spacing.three,
+    gap: 18,
+  },
+  beforeAfterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: Spacing.four,
+    marginTop: Spacing.two,
+  },
+  beforeAfterItem: { alignItems: 'center', gap: Spacing.two },
+  beforeAfterLabel: { letterSpacing: 1.5 },
+  // Heights derived from each image's real aspect ratio (journal photo
+  // 2386x3500, app screenshot 900x881) so "contain" never letterboxes.
+  journalImage: {
+    width: 280,
+    height: 410,
+    borderRadius: Radius.large,
+    borderWidth: 1,
+  },
+  appImage: {
+    width: 280,
+    height: 274,
+    borderRadius: Radius.large,
+    borderWidth: 1,
   },
   stepsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
-  stepCard: { flexBasis: 260, minWidth: 240 },
+  stepCard: { flexGrow: 1, flexBasis: 220, maxWidth: 300 },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   finalCtaBand: { paddingTop: Spacing.five, paddingBottom: Spacing.four },
-  finalCtaHeadline: { textAlign: 'center', fontSize: 26, marginBottom: Spacing.one },
+  finalCtaHeadline: {
+    textAlign: 'center',
+    fontSize: 26,
+    lineHeight: 32,
+    marginBottom: Spacing.one,
+  },
 });

@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -55,6 +55,14 @@ export default function LogMatchScreen() {
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedMatchId, setSavedMatchId] = useState<string | null>(null);
+  // So the auto-redirect-home timer below can be cancelled if the player
+  // taps "View match details" and navigates away before it fires — a raw
+  // setTimeout doesn't know the screen moved on, and would otherwise yank
+  // them back to Home a second and a half into reading their match detail.
+  const homeRedirectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (homeRedirectTimeout.current) clearTimeout(homeRedirectTimeout.current);
+  }, []);
   // Only turns on once someone actually tries to save — the form doesn't
   // shout "required!" at a blank page you just opened, only once you've
   // told it you think you're done and it disagrees.
@@ -165,7 +173,7 @@ export default function LogMatchScreen() {
         router.replace({ pathname: '/match/[id]', params: { id: matchId } });
       } else {
         setSavedMatchId(matchId);
-        setTimeout(() => router.replace('/home'), 1600);
+        homeRedirectTimeout.current = setTimeout(() => router.replace('/home'), 1600);
       }
     } catch {
       setSaveError("Couldn't save — you're offline. Nothing you entered was lost.");
@@ -214,7 +222,10 @@ export default function LogMatchScreen() {
           </ThemedText>
           <Pressable
             style={styles.linkRow}
-            onPress={() => router.replace({ pathname: '/match/[id]', params: { id: savedMatchId } })}
+            onPress={() => {
+              if (homeRedirectTimeout.current) clearTimeout(homeRedirectTimeout.current);
+              router.replace({ pathname: '/match/[id]', params: { id: savedMatchId } });
+            }}
           >
             <ThemedText type="linkPrimary" style={{ color: theme.primary, fontWeight: '700' }}>
               View match details

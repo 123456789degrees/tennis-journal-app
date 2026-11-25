@@ -22,6 +22,9 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   size?: 'default' | 'large';
   fullWidth?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  // "Edit"/"Delete"/"Save" read naturally icon-first; a forward action like
+  // "Get started" reads naturally as text-then-arrow — callers pick per use.
+  iconPosition?: 'left' | 'right';
 }
 
 // react-native-web doesn't type these Pressable-only-on-web hover events, so
@@ -38,6 +41,7 @@ export function Button({
   fullWidth,
   disabled,
   icon,
+  iconPosition = 'left',
   onPressIn,
   onPressOut,
   ...rest
@@ -49,7 +53,9 @@ export function Button({
 
   const gradients: Record<ButtonVariant, readonly [string, string] | null> = {
     primary: theme.primaryGradient,
-    accent: theme.accentGradient,
+    // Flat, not gradient — a solid Optic Ball lime reads crisper than a
+    // gradient against the rest of the (mostly flat) brand palette.
+    accent: null,
     outline: null,
     ghost: null,
     danger: theme.dangerGradient,
@@ -167,12 +173,17 @@ export function Button({
               style={StyleSheet.absoluteFill}
             />
           ) : null}
-          {icon ? <Ionicons name={icon} size={iconSize} color={iconColor} style={styles.icon} /> : null}
+          {icon && iconPosition === 'left' ? (
+            <Ionicons name={icon} size={iconSize} color={iconColor} style={styles.iconLeft} />
+          ) : null}
           <ThemedText
             style={[styles.label, size === 'large' && styles.labelLarge, { color: iconColor }]}
           >
             {label}
           </ThemedText>
+          {icon && iconPosition === 'right' ? (
+            <Ionicons name={icon} size={iconSize} color={iconColor} style={styles.iconRight} />
+          ) : null}
         </Animated.View>
       </Pressable>
     </Animated.View>
@@ -204,7 +215,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.large,
   },
   fullWidth: { alignSelf: 'stretch' },
-  icon: { marginRight: Spacing.one },
+  iconLeft: { marginRight: Spacing.one },
+  iconRight: { marginLeft: Spacing.one },
   label: { fontWeight: '700', fontSize: 17 },
   labelLarge: { fontSize: 20 },
 });
