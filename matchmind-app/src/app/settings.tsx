@@ -133,6 +133,21 @@ export default function SettingsScreen() {
           </Card>
         </Pressable>
 
+        <Pressable onPress={() => router.push('/')}>
+          <Card style={styles.playstyleRow}>
+            <ThemedView style={styles.privacyRow}>
+              <Ionicons name="information-circle-outline" size={18} color={theme.primary} />
+              <ThemedView>
+                <ThemedText type="smallBold">About MatchMind</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Back to the story &amp; homepage
+                </ThemedText>
+              </ThemedView>
+            </ThemedView>
+            <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+          </Card>
+        </Pressable>
+
         <Card>
           <ThemedView style={styles.toggleRow}>
             <ThemedText>Practice nudges</ThemedText>

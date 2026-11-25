@@ -106,6 +106,24 @@ export default function Index() {
   const goToSignup = () => router.push('/login?mode=signup');
   const goToLogin = () => router.push('/login');
 
+  const steps = [
+    {
+      icon: <Ionicons name="create-outline" size={22} color={theme.primary} />,
+      title: 'Log it',
+      body: 'Type it out or just talk — the score, your opponent, and how you played.',
+    },
+    {
+      icon: <Ionicons name="eye-outline" size={22} color={theme.primary} />,
+      title: 'Scout it',
+      body: "Note what you noticed about their game while it's still fresh.",
+    },
+    {
+      icon: <Ionicons name="sparkles-outline" size={22} color={theme.primary} />,
+      title: 'Get your plan',
+      body: 'AI turns your notes into a specific practice plan for next time.',
+    },
+  ];
+
   const solutions = [
     {
       icon: <Ionicons name="mic-outline" size={22} color={theme.primary} />,
@@ -175,17 +193,12 @@ export default function Index() {
             </ThemedView>
 
             <ThemedView style={styles.heroInner}>
-              <ThemedText style={[styles.heroLabel, { color: theme.accent }]}>
-                Mind over match
+              <ThemedText style={[styles.heroHeadline, { color: theme.primaryText }]}>
+                Mind Over Match.
               </ThemedText>
-              <ThemedText
-                type="title"
-                style={[styles.heroHeadline, { color: theme.primaryText }]}
-              >
+              <ThemedText style={[styles.heroTagline, { color: theme.primaryText }]}>
                 Turn every tennis match into a smarter{' '}
-                <ThemedText
-                  style={[styles.heroHeadlineAccent, { color: theme.accent }]}
-                >
+                <ThemedText style={[styles.heroTaglineAccent, { color: theme.accent }]}>
                   practice plan.
                 </ThemedText>
               </ThemedText>
@@ -358,6 +371,39 @@ export default function Index() {
             </ThemedView>
           </ThemedView>
 
+          {/* How it works */}
+          <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
+            <ThemedView style={styles.howInner}>
+              <ThemedText type="title" style={styles.sectionTitle}>
+                How it works
+              </ThemedText>
+              <ThemedView style={styles.stepsRow}>
+                {steps.map((step, i) => (
+                  <Card
+                    key={step.title}
+                    style={[
+                      styles.stepCard,
+                      { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                    ]}
+                  >
+                    <ThemedView style={styles.stepNumberRow}>
+                      <ThemedView style={[styles.stepNumber, { backgroundColor: theme.primary }]}>
+                        <ThemedText style={[styles.stepNumberText, { color: theme.primaryText }]}>
+                          {i + 1}
+                        </ThemedText>
+                      </ThemedView>
+                      {step.icon}
+                    </ThemedView>
+                    <ThemedText type="smallBold">{step.title}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {step.body}
+                    </ThemedText>
+                  </Card>
+                ))}
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
+
           {/* Solutions */}
           <ThemedView
             style={[styles.band, { backgroundColor: theme.backgroundSelected }]}
@@ -459,22 +505,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
   },
-  heroLabel: {
-    textAlign: 'center',
-    fontFamily: BrandFonts.bodyBold,
-    fontSize: 13,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
+  // The one "cool font" moment in the hero — Instrument Serif Italic, the
+  // same accent face used for "practice plan." below, just bigger and as
+  // the headline itself rather than one word inside it.
   heroHeadline: {
     textAlign: 'center',
-    fontSize: 32,
-    lineHeight: 40,
-    maxWidth: 620,
-  },
-  heroHeadlineAccent: {
     fontFamily: BrandFonts.serifItalic,
-    fontSize: 36,
+    fontSize: 48,
+    lineHeight: 54,
+  },
+  heroTagline: {
+    textAlign: 'center',
+    fontFamily: BrandFonts.bodyBold,
+    fontSize: 19,
+    lineHeight: 26,
+    maxWidth: 480,
+  },
+  heroTaglineAccent: {
+    fontFamily: BrandFonts.serifItalic,
+    fontSize: 22,
   },
   heroSubhead: {
     textAlign: 'center',
@@ -557,6 +606,20 @@ const styles = StyleSheet.create({
   },
   stepsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   stepCard: { flexGrow: 1, flexBasis: 220, maxWidth: 300 },
+  stepNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginBottom: Spacing.half,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: { fontFamily: BrandFonts.bodyBold, fontSize: 13 },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   finalCtaBand: { paddingTop: Spacing.five, paddingBottom: Spacing.four },
   finalCtaHeadline: {
