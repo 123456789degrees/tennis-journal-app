@@ -142,14 +142,6 @@ export default function SettingsScreen() {
               trackColor={{ false: theme.border, true: theme.primary }}
             />
           </ThemedView>
-          <ThemedView style={[styles.toggleRow, styles.fieldSpacing]}>
-            <ThemedText>Reminder to log after a match</ThemedText>
-            <Switch
-              value={player.settings.logReminderEnabled}
-              onValueChange={(v) => updateSetting('logReminderEnabled', v)}
-              trackColor={{ false: theme.border, true: theme.primary }}
-            />
-          </ThemedView>
         </Card>
 
         <Card tint="accent">

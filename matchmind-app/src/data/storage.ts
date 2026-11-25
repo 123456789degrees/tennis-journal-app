@@ -16,7 +16,7 @@ function throwIfError<T>({ data, error }: { data: T; error: { message: string } 
   return data;
 }
 
-const DEFAULT_SETTINGS = { practiceNudgesEnabled: true, logReminderEnabled: true };
+const DEFAULT_SETTINGS = { practiceNudgesEnabled: true };
 
 // --- Session ---
 

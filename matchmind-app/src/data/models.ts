@@ -17,7 +17,6 @@ export interface Player {
   // server-side, never sent to or stored by the client). See lib/supabase.ts.
   settings: {
     practiceNudgesEnabled: boolean;
-    logReminderEnabled: boolean;
     // "My Playstyle" — the player scouts THEMSELVES the same way they scout
     // an opponent (see ScoutingNotes below), and an AI (or a keyword
     // fallback) determines the closest matching style(s). myScoutingNotes
