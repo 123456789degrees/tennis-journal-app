@@ -184,7 +184,7 @@ export default function Index() {
                 {animatedEarlyUsers.toLocaleString()}+
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                players
+                players using this
               </ThemedText>
             </ThemedView>
           </ThemedView>
