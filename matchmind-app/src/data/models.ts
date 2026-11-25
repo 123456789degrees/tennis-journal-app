@@ -54,7 +54,8 @@ export interface ScoutingNotes {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
+  // Catch-all — mentality, fitness/movement, anything that isn't a stroke.
+  // There used to be a separate "mental" field; folded into this one.
   other: string;
 }
 

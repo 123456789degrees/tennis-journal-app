@@ -25,9 +25,7 @@ import { getMatch, getOpponent, saveMatch, upsertOpponent } from '@/data/storage
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
-// A small red asterisk after a label — every required field gets one except
-// Scout your opponent's "Other", the one field that's still genuinely
-// optional.
+// A small red asterisk after a label — every field on this form is required.
 function RequiredMark({ color }: { color: string }) {
   return <ThemedText style={{ color }}> *</ThemedText>;
 }
@@ -49,7 +47,6 @@ export default function LogMatchScreen() {
   const [scoutForehand, setScoutForehand] = useState('');
   const [scoutServe, setScoutServe] = useState('');
   const [scoutBackhand, setScoutBackhand] = useState('');
-  const [scoutMental, setScoutMental] = useState('');
   const [scoutOther, setScoutOther] = useState('');
 
   const [wentWell, setWentWell] = useState('');
@@ -88,8 +85,12 @@ export default function LogMatchScreen() {
     setScoutForehand(m.scoutingNotes?.forehand ?? '');
     setScoutServe(m.scoutingNotes?.serve ?? '');
     setScoutBackhand(m.scoutingNotes?.backhand ?? '');
-    setScoutMental(m.scoutingNotes?.mental ?? '');
-    setScoutOther(m.scoutingNotes?.other ?? '');
+    // Older matches may still have a separate "mental" note from before that
+    // field was folded into "Other" — surface it here instead of silently
+    // dropping it the next time this match is saved.
+    const legacyMental = (m.scoutingNotes as { mental?: string } | undefined)?.mental ?? '';
+    const other = m.scoutingNotes?.other ?? '';
+    setScoutOther([other, legacyMental].filter(Boolean).join(other && legacyMental ? ' — ' : ''));
     setWentWell(m.selfReflection?.whatWentWell ?? '');
     setToImprove(m.selfReflection?.whatToImprove ?? '');
   }
@@ -146,7 +147,6 @@ export default function LogMatchScreen() {
           forehand: scoutForehand,
           serve: scoutServe,
           backhand: scoutBackhand,
-          mental: scoutMental,
           other: scoutOther,
         },
         selfReflection: { whatWentWell: wentWell, whatToImprove: toImprove },
@@ -174,10 +174,10 @@ export default function LogMatchScreen() {
     }
   }
 
-  // Everything is required except the scouting "Other" field — logging just
-  // the score without any of the actual scouting/reflection defeated the
-  // point of keeping a match journal at all, so this form now insists on
-  // the parts that make it one.
+  // Logging just the score without any of the actual scouting/reflection
+  // defeated the point of keeping a match journal at all, so every field
+  // here is required — including "Other" now that it absorbed what used to
+  // be the separate (also required) "Mental" field.
   const canSave =
     !!opponent &&
     !!result &&
@@ -186,7 +186,7 @@ export default function LogMatchScreen() {
     scoutForehand.trim().length > 0 &&
     scoutServe.trim().length > 0 &&
     scoutBackhand.trim().length > 0 &&
-    scoutMental.trim().length > 0 &&
+    scoutOther.trim().length > 0 &&
     wentWell.trim().length > 0 &&
     toImprove.trim().length > 0;
 
@@ -200,7 +200,7 @@ export default function LogMatchScreen() {
   const forehandError = showValidation && !scoutForehand.trim();
   const serveError = showValidation && !scoutServe.trim();
   const backhandError = showValidation && !scoutBackhand.trim();
-  const mentalError = showValidation && !scoutMental.trim();
+  const otherError = showValidation && !scoutOther.trim();
   const wentWellError = showValidation && !wentWell.trim();
   const toImproveError = showValidation && !toImprove.trim();
 
@@ -278,7 +278,7 @@ export default function LogMatchScreen() {
           <ThemedText type="smallBold" style={styles.fieldSpacing}>
             Score
             <RequiredMark color={theme.danger} />
-            <ThemedText type="small" themeColor="textSecondary"> (set 3 optional — type one side, the other fills in)</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary"> — set 3 is optional, type one side and the other fills in</ThemedText>
           </ThemedText>
           <ThemedView style={styles.setsColumn}>
             {sets.map((s, i) => (
@@ -377,22 +377,14 @@ export default function LogMatchScreen() {
             error={backhandError}
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-            Mental
+            Other
             <RequiredMark color={theme.danger} />
-          </ThemedText>
-          <TypeOrDictateField
-            value={scoutMental}
-            onChangeText={setScoutMental}
-            placeholder="e.g. easily gets angry, tightens up on big points"
-            error={mentalError}
-          />
-          <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-            Other (optional)
           </ThemedText>
           <TypeOrDictateField
             value={scoutOther}
             onChangeText={setScoutOther}
-            placeholder="anything else"
+            placeholder="e.g. mentality, runs fast"
+            error={otherError}
           />
         </Card>
 

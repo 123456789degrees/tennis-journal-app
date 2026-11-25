@@ -2,7 +2,6 @@ export interface RawMatchNotes {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
   other: string;
   whatWentWell: string;
   whatToImprove: string;

@@ -113,7 +113,6 @@ export default function OpponentDetailScreen() {
             <StatBox label="Forehand" value={summary?.forehand || placeholder} />
             <StatBox label="Serve" value={summary?.serve || placeholder} />
             <StatBox label="Backhand" value={summary?.backhand || placeholder} />
-            <StatBox label="Mental" value={summary?.mental || placeholder} />
             <StatBox label="Other" value={summary?.other || placeholder} />
             <StatBox label="What went well" value={summary?.whatWentWell || placeholder} />
             <StatBox label="What to improve" value={summary?.whatToImprove || placeholder} />
@@ -123,7 +122,7 @@ export default function OpponentDetailScreen() {
         <Card tint="accent">
           <ThemedView style={styles.cardHeaderRow}>
             <Ionicons name="sparkles" size={16} color={theme.text} />
-            <ThemedText type="smallBold">How to beat them (AI — bonus)</ThemedText>
+            <ThemedText type="smallBold">How to beat them</ThemedText>
           </ThemedView>
           <ThemedText>{aiTipLoading ? 'Thinking...' : aiTip}</ThemedText>
         </Card>

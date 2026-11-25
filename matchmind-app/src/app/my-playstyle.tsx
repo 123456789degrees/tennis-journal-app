@@ -18,13 +18,13 @@ import { getPlayer, savePlayer } from '@/data/storage';
 import { useCurrentPlayerId } from '@/hooks/use-current-player-id';
 import { useTheme } from '@/hooks/use-theme';
 
-// Same convention as log-match's "Scout your opponent" — every field
-// required except "Other."
+// Same convention as log-match's "Scout your opponent" — every field here
+// is required.
 function RequiredMark({ color }: { color: string }) {
   return <ThemedText style={{ color }}> *</ThemedText>;
 }
 
-const EMPTY_NOTES: ScoutingNotes = { forehand: '', serve: '', backhand: '', mental: '', other: '' };
+const EMPTY_NOTES: ScoutingNotes = { forehand: '', serve: '', backhand: '', other: '' };
 
 export default function MyPlaystyleScreen() {
   const theme = useTheme();
@@ -50,12 +50,12 @@ export default function MyPlaystyleScreen() {
     notes.forehand.trim().length > 0 &&
     notes.serve.trim().length > 0 &&
     notes.backhand.trim().length > 0 &&
-    notes.mental.trim().length > 0;
+    notes.other.trim().length > 0;
 
   const forehandError = showValidation && !notes.forehand.trim();
   const serveError = showValidation && !notes.serve.trim();
   const backhandError = showValidation && !notes.backhand.trim();
-  const mentalError = showValidation && !notes.mental.trim();
+  const otherError = showValidation && !notes.other.trim();
 
   function updateField(field: keyof ScoutingNotes, value: string) {
     setNotes((prev) => ({ ...prev, [field]: value }));
@@ -168,22 +168,14 @@ export default function MyPlaystyleScreen() {
                 error={backhandError}
               />
               <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-                Mental / under pressure
+                Other
                 <RequiredMark color={theme.danger} />
-              </ThemedText>
-              <TypeOrDictateField
-                value={notes.mental}
-                onChangeText={(v) => updateField('mental', v)}
-                placeholder="e.g. I get impatient in long rallies and want to end the point"
-                error={mentalError}
-              />
-              <ThemedText type="small" themeColor="textSecondary" style={styles.fieldSpacing}>
-                Other (optional)
               </ThemedText>
               <TypeOrDictateField
                 value={notes.other}
                 onChangeText={(v) => updateField('other', v)}
-                placeholder="anything else about how you play"
+                placeholder="e.g. mentality, runs fast"
+                error={otherError}
               />
             </Card>
 

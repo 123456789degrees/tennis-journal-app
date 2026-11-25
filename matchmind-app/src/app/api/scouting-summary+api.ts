@@ -12,7 +12,6 @@ interface ScoutingMatch {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
   other: string;
   whatWentWell: string;
   whatToImprove: string;
@@ -28,7 +27,6 @@ const FIELDS: FieldKey[] = [
   'forehand',
   'serve',
   'backhand',
-  'mental',
   'other',
   'whatWentWell',
   'whatToImprove',
@@ -72,12 +70,12 @@ export async function POST(request: Request) {
 
 ${notesText}
 
-IMPORTANT — who each field is about: "forehand", "serve", "backhand", "mental", and "other" are the player's SCOUTING notes about ${opponentName}'s game. "whatWentWell" and "whatToImprove" are the player's SELF-REFLECTION about their OWN game specifically in matches against ${opponentName}. Never blur this — scouting fields must read unambiguously as being about the opponent (e.g. "Their forehand...", "${opponentName} tends to..."), and self-reflection fields must read unambiguously as being about the player (e.g. "Your backhand...", "You...").
+IMPORTANT — who each field is about: "forehand", "serve", "backhand", and "other" (mentality, fitness/movement, anything that isn't a stroke) are the player's SCOUTING notes about ${opponentName}'s game. "whatWentWell" and "whatToImprove" are the player's SELF-REFLECTION about their OWN game specifically in matches against ${opponentName}. Never blur this — scouting fields must read unambiguously as being about the opponent (e.g. "Their forehand...", "${opponentName} tends to..."), and self-reflection fields must read unambiguously as being about the player (e.g. "Your backhand...", "You...").
 
 For each field below that has at least one note, write ONE synthesized sentence covering the whole history, weighted toward the most recent matches — if the notes show a real change over time (improved, gotten worse, fixed, started happening again), say so explicitly instead of just repeating the latest note verbatim. Only include a field in your response if the notes above actually contain data for it. Fields to cover: ${fieldsWithData.join(', ')}.
 
 Respond with ONLY a JSON object using exactly the keys that have data, like:
-{"forehand": "...", "mental": "..."}`;
+{"forehand": "...", "other": "..."}`;
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {

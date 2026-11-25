@@ -89,7 +89,7 @@ export default function SelectOpponentScreen() {
           <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search opponent (fuzzy — spelling/nicknames ok)..."
+            placeholder="Search opponent..."
             placeholderTextColor={theme.textSecondary}
             value={query}
             onChangeText={setQuery}

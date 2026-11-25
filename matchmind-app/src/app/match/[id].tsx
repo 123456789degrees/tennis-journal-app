@@ -40,7 +40,6 @@ export default function MatchDetailScreen() {
             forehand: m.scoutingNotes?.forehand ?? '',
             serve: m.scoutingNotes?.serve ?? '',
             backhand: m.scoutingNotes?.backhand ?? '',
-            mental: m.scoutingNotes?.mental ?? '',
             other: m.scoutingNotes?.other ?? '',
             whatWentWell: m.selfReflection?.whatWentWell ?? '',
             whatToImprove: m.selfReflection?.whatToImprove ?? '',
@@ -110,7 +109,6 @@ export default function MatchDetailScreen() {
         {match.scoutingNotes?.forehand ||
         match.scoutingNotes?.serve ||
         match.scoutingNotes?.backhand ||
-        match.scoutingNotes?.mental ||
         match.scoutingNotes?.other ||
         match.selfReflection?.whatWentWell ||
         match.selfReflection?.whatToImprove ? (
@@ -133,10 +131,6 @@ export default function MatchDetailScreen() {
               <StatBox
                 label="Backhand"
                 value={(notesSummary.backhand ?? match.scoutingNotes?.backhand ?? '') || placeholder}
-              />
-              <StatBox
-                label="Mental"
-                value={(notesSummary.mental ?? match.scoutingNotes?.mental ?? '') || placeholder}
               />
               <StatBox
                 label="Other"

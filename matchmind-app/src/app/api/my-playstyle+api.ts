@@ -5,7 +5,6 @@ interface RequestBody {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
   other: string;
 }
 
@@ -73,7 +72,7 @@ function validate(parsed: unknown): PlaystyleResult | null {
 }
 
 export async function POST(request: Request) {
-  const { forehand, serve, backhand, mental, other } = (await request.json()) as RequestBody;
+  const { forehand, serve, backhand, other } = (await request.json()) as RequestBody;
 
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -84,8 +83,7 @@ export async function POST(request: Request) {
     `Forehand: ${forehand || '—'}`,
     `Serve: ${serve || '—'}`,
     `Backhand: ${backhand || '—'}`,
-    `Mental / how they handle pressure: ${mental || '—'}`,
-    other ? `Other: ${other}` : null,
+    `Other (mentality, fitness/movement, anything else): ${other || '—'}`,
   ]
     .filter(Boolean)
     .join('\n');

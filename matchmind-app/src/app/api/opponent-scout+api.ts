@@ -7,7 +7,6 @@ interface ScoutingMatch {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
   other: string;
 }
 
@@ -17,6 +16,24 @@ interface RequestBody {
   matches: ScoutingMatch[]; // chronological, oldest first
 }
 
+// Real, standard tennis strategy for beating each playstyle category — not
+// left to the model to free-associate, so the tip stays grounded in actual
+// tactics even if the scouting notes are thin. Keys must match
+// data/models.ts's PLAYSTYLES exactly; this route has no cross-file imports
+// (same convention as the other +api routes), so the list is repeated here.
+const PLAYSTYLE_STRATEGY: Record<string, string> = {
+  'Pusher / moonballer':
+    'Come forward and finish points at net rather than trying to out-rally them from the baseline — they will get almost everything back. Take the ball early and on the rise to deny them time to reset into their defensive position, and mix in drop shots and short angles to pull them forward, since they usually struggle more moving in than grinding from behind the baseline. Stay patient and build the point; forcing a low-percentage shot against a high-margin opponent is how they win.',
+  'Aggressive baseliner':
+    "Take their pace away with slice, moonballs, and change of pace instead of matching their power — feeding a steady rhythm of balls at a consistent height and speed is exactly what they want to attack. Keep the ball deep and to their weaker wing to limit how often they can step in, and extend rallies, since their unforced error count usually climbs the longer a point goes given how much risk they take. Look to approach the net behind any short ball before they can set up on it.",
+  'Serve-and-volley':
+    "Focus returns low and at their feet to force a difficult first volley, and use lobs when they're camped at net. Target the body on the return — less time to react to a ball hit directly at them than one to either side. Make them win it on the second serve by standing in and attacking a weaker second ball before they can get forward.",
+  'All-court':
+    "Figure out their pattern early and force whatever tempo makes them least comfortable — these players rely on variety, so keeping points efficient (not letting a rally run long enough for them to cycle through tactics) takes that away. Once you spot a clearly weaker side, attack it directly instead of playing a balanced, symmetric game back at them.",
+  Counterpuncher:
+    "Be the one to dictate — they're built to absorb pace and redirect it, so trying to out-rally them from the baseline plays into their hands. Construct the point patiently but finish decisively once you get a short ball, including coming to net, rather than giving them a chance to reset with an unforced error. Mixing in drop shots also works well since counterpunchers are usually more comfortable camped on the baseline than moving forward.",
+};
+
 export async function POST(request: Request) {
   const { opponentName, playstyle, matches } = (await request.json()) as RequestBody;
 
@@ -25,27 +42,37 @@ export async function POST(request: Request) {
     return Response.json({ tip: null, error: 'not_configured' });
   }
 
-  const notesWithText = matches.filter(
-    (m) => m.forehand || m.serve || m.backhand || m.mental || m.other
-  );
-  if (notesWithText.length === 0) {
-    return Response.json({ tip: null, error: 'no_data' });
-  }
+  const notesWithText = matches.filter((m) => m.forehand || m.serve || m.backhand || m.other);
 
   const notesText = notesWithText
     .map(
       (m, i) =>
-        `Match ${i + 1} (${m.date}): forehand="${m.forehand || '—'}", serve="${m.serve || '—'}", backhand="${m.backhand || '—'}", mental="${m.mental || '—'}", other="${m.other || '—'}"`
+        `Match ${i + 1} (${m.date}): forehand="${m.forehand || '—'}", serve="${m.serve || '—'}", backhand="${m.backhand || '—'}", other="${m.other || '—'}"`
     )
     .join('\n');
 
-  const prompt = `You are a tennis scouting assistant helping a junior competitive player prepare for a rematch against an opponent named ${opponentName}, whose general playstyle is "${playstyle}".
+  const strategyForStyle = PLAYSTYLE_STRATEGY[playstyle];
+  const strategyText = strategyForStyle
+    ? `\n\nStandard strategy for beating a "${playstyle}" player in general:\n${strategyForStyle}`
+    : '';
 
-Here are the player's own scouting notes from every past match against this opponent, in chronological order (earliest first):
+  // No scouting notes at all yet — the tip can still lean entirely on the
+  // general playstyle strategy above instead of saying nothing.
+  if (notesWithText.length === 0 && !strategyForStyle) {
+    return Response.json({ tip: null, error: 'no_data' });
+  }
 
-${notesText}
+  const prompt = `You are a tennis strategy assistant helping a junior competitive player prepare for a rematch against an opponent named ${opponentName}, whose general playstyle is "${playstyle}".${strategyText}
 
-Write a short, concrete "how to beat them" tip (2-4 sentences). Weight recent matches more heavily than old ones — if the notes show the opponent has improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently"). Factor in the mental/mentality notes too, whatever form they take — tightening up under pressure, getting frustrated or angry, giving up mentally when down, being a scrappy fighter, etc. — and turn that into a concrete tactic (e.g. if they get angry easily, suggest making them play extra shots to create adversity; if they tighten up under pressure, suggest extending rallies on big points). Be specific and tactical, not generic. Synthesize the notes — don't just repeat them verbatim.`;
+Here are the player's own scouting notes from every past match against this opponent, in chronological order (earliest first) — "other" covers mentality (tightens up under pressure, gets frustrated, etc.) as well as anything else that isn't a stroke:
+
+${notesText || '(No scouting notes logged yet — base the tip on the general playstyle strategy above.)'}
+
+Write a short, concrete "how to beat them" tip (3-5 sentences) that blends BOTH of these together, not just one:
+1. The standard strategy for beating their playstyle category, adapted to make sense for this specific matchup
+2. Specific things actually observed about THIS opponent in the notes above — weight recent matches more heavily than old ones, and if the notes show they've improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently")
+
+If a specific note contradicts or sharpens the general playstyle strategy (e.g. a "Pusher / moonballer" whose notes say their backhand is actually a real weapon), favor what's actually been observed over the generic assumption. Give real, actionable tennis tactics — actual shot selection, court positioning, and point construction — not vague encouragement. Synthesize everything into one cohesive game plan rather than listing the strategy and the notes separately.`;
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -58,7 +85,7 @@ Write a short, concrete "how to beat them" tip (2-4 sentences). Weight recent ma
       body: JSON.stringify({
         model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 220,
+        max_tokens: 320,
       }),
     });
 

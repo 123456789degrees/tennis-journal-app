@@ -10,22 +10,13 @@ interface RequestBody {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
   other: string;
   whatWentWell: string;
   whatToImprove: string;
 }
 
 type NoteKey = keyof RequestBody;
-const KEYS: NoteKey[] = [
-  'forehand',
-  'serve',
-  'backhand',
-  'mental',
-  'other',
-  'whatWentWell',
-  'whatToImprove',
-];
+const KEYS: NoteKey[] = ['forehand', 'serve', 'backhand', 'other', 'whatWentWell', 'whatToImprove'];
 
 function extractJsonObject(text: string): Record<string, string> | null {
   const start = text.indexOf('{');
@@ -57,7 +48,7 @@ export async function POST(request: Request) {
 
   const prompt = `A junior competitive tennis player just logged these raw notes immediately after a match.
 
-IMPORTANT — who each note is about: "forehand", "serve", "backhand", "mental", and "other" are the player's SCOUTING notes about their OPPONENT's game. "whatWentWell" and "whatToImprove" are the player's SELF-REFLECTION about their OWN game. Never blur this distinction — when rewriting a scouting note, make it unambiguous that it describes the opponent (e.g. "Their forehand..." / "The opponent's serve..."), and when rewriting a self-reflection note, make it unambiguous that it describes the player themselves (e.g. "Your backhand..." / "You...").
+IMPORTANT — who each note is about: "forehand", "serve", "backhand", and "other" (mentality, fitness/movement, anything that isn't a stroke) are the player's SCOUTING notes about their OPPONENT's game. "whatWentWell" and "whatToImprove" are the player's SELF-REFLECTION about their OWN game. Never blur this distinction — when rewriting a scouting note, make it unambiguous that it describes the opponent (e.g. "Their forehand..." / "The opponent's serve..."), and when rewriting a self-reflection note, make it unambiguous that it describes the player themselves (e.g. "Your backhand..." / "You...").
 
 Rewrite EACH note into a sharper, more useful one-sentence analytical read — same meaning, more concrete and coach-like, not just rephrasing filler. Don't invent details that aren't implied by the original. Keep each to one sentence.
 

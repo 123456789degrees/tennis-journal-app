@@ -278,7 +278,7 @@ export default function PracticeScreen() {
                     color={theme.textSecondary}
                   />
                   <ThemedText type="small" themeColor="textSecondary">
-                    {videosOpen ? 'Hide video ideas' : 'Show video ideas (optional)'}
+                    {videosOpen ? 'Hide video ideas' : 'Show video ideas'}
                   </ThemedText>
                 </Pressable>
 

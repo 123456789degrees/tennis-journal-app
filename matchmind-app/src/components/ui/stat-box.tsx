@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -10,7 +10,6 @@ type StatLabel =
   | 'Forehand'
   | 'Serve'
   | 'Backhand'
-  | 'Mental'
   | 'Other'
   | 'What went well'
   | 'What to improve';
@@ -33,11 +32,7 @@ export function StatBox({ label, value }: { label: StatLabel; value: string }) {
   return (
     <Card interactive style={styles.card}>
       <View style={styles.row}>
-        {label === 'Mental' ? (
-          <MaterialCommunityIcons name="brain" size={16} color={iconColor} />
-        ) : (
-          <Ionicons name={IONICONS[label]!} size={16} color={iconColor} />
-        )}
+        <Ionicons name={IONICONS[label]!} size={16} color={iconColor} />
         <ThemedText type="smallBold">{label}</ThemedText>
       </View>
       <ThemedText type="small">{value}</ThemedText>

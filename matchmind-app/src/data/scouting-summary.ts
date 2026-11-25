@@ -46,7 +46,6 @@ export interface ScoutingSummary {
   forehand: string;
   serve: string;
   backhand: string;
-  mental: string;
   other: string;
   // Not about the opponent — this is the player's OWN self-reflection,
   // aggregated specifically across matches against this opponent, so the
@@ -62,7 +61,6 @@ export function summarizeScouting(matches: Match[]): ScoutingSummary {
     forehand: summarizeField((m) => m.scoutingNotes?.forehand ?? '', oldestFirst),
     serve: summarizeField((m) => m.scoutingNotes?.serve ?? '', oldestFirst),
     backhand: summarizeField((m) => m.scoutingNotes?.backhand ?? '', oldestFirst),
-    mental: summarizeField((m) => m.scoutingNotes?.mental ?? '', oldestFirst),
     other: summarizeField((m) => m.scoutingNotes?.other ?? '', oldestFirst),
     whatWentWell: summarizeField((m) => m.selfReflection?.whatWentWell ?? '', oldestFirst),
     whatToImprove: summarizeField((m) => m.selfReflection?.whatToImprove ?? '', oldestFirst),
@@ -92,7 +90,6 @@ export async function fetchScoutingSummary(
           forehand: m.scoutingNotes?.forehand ?? '',
           serve: m.scoutingNotes?.serve ?? '',
           backhand: m.scoutingNotes?.backhand ?? '',
-          mental: m.scoutingNotes?.mental ?? '',
           other: m.scoutingNotes?.other ?? '',
           whatWentWell: m.selfReflection?.whatWentWell ?? '',
           whatToImprove: m.selfReflection?.whatToImprove ?? '',
@@ -105,7 +102,6 @@ export async function fetchScoutingSummary(
       forehand: ai.forehand || fallback.forehand,
       serve: ai.serve || fallback.serve,
       backhand: ai.backhand || fallback.backhand,
-      mental: ai.mental || fallback.mental,
       other: ai.other || fallback.other,
       whatWentWell: ai.whatWentWell || fallback.whatWentWell,
       whatToImprove: ai.whatToImprove || fallback.whatToImprove,

@@ -25,9 +25,7 @@ const KEYWORDS: Record<Playstyle, RegExp> = {
 };
 
 export function classifyPlaystyle(notes: ScoutingNotes): PlaystyleClassification {
-  const text = [notes.forehand, notes.serve, notes.backhand, notes.mental, notes.other]
-    .filter(Boolean)
-    .join(' ');
+  const text = [notes.forehand, notes.serve, notes.backhand, notes.other].filter(Boolean).join(' ');
 
   const scores = new Map<Playstyle, number>();
   for (const style of PLAYSTYLES) {
