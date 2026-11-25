@@ -18,12 +18,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { ZoomableImage } from '@/components/zoomable-image';
 import { getCurrentPlayerId } from '@/data/storage';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useTheme } from '@/hooks/use-theme';
 import { enforceInactivityTimeout } from '@/lib/session-activity';
-import { supabase } from '@/lib/supabase';
 
 // This is the first thing anyone sees at matchmindtennis.com now — signed
 // in or not. A signed-in player gets a "Go to your matches" shortcut
@@ -42,24 +40,6 @@ export default function Index() {
   useEffect(() => {
     enforceInactivityTimeout().then(() => {
       getCurrentPlayerId().then((id) => setIsLoggedIn(!!id));
-    });
-  }, []);
-
-  // Live total matches logged, via a security-definer RPC (see
-  // supabase/schema.sql: site_stats()) since normal row-level security
-  // scopes every other query to one player's own data. Counted up rather
-  // than shown instantly once this section scrolls into view, purely for
-  // effect. (site_stats() also returns a user count, but the landing page
-  // just states "100+ players" as a fixed line rather than a live account
-  // count — the real account count is a small, still-growing number that
-  // doesn't represent actual usage well on its own.)
-  const [stats, setStats] = useState<{ matches: number } | null>(null);
-  useEffect(() => {
-    supabase.rpc('site_stats').then(({ data, error }) => {
-      const row = !error && data ? data[0] : null;
-      if (row) {
-        setStats({ matches: Number(row.matchCount) || 0 });
-      }
     });
   }, []);
 
@@ -91,39 +71,37 @@ export default function Index() {
     checkStatsVisible();
   };
 
-  const animatedMatches = useCountUp(stats?.matches ?? 0, statsTriggered);
   // Fixed, not live: how many players in my USTA section were already using
   // MatchMind before it even had real accounts (back when everything just
   // lived in local browser storage, with no server to count anyone). True,
-  // but unlike the counter above it can't come from a database query —
-  // there's nothing to query — so it's a constant, not a growing tracker.
+  // but it can't come from a database query — there's nothing to query —
+  // so it's a constant, not a growing tracker.
   const animatedEarlyUsers = useCountUp(100, statsTriggered);
 
   const goToApp = () => router.push('/home');
   const goToSignup = () => router.push('/login?mode=signup');
   const goToLogin = () => router.push('/login');
 
-  // Real screenshots of the actual app (seeded with realistic sample data,
-  // not a live account) — proof these claims are real features, not just
-  // marketing copy.
-  const steps = [
+  const solutions = [
     {
-      icon: <MaterialCommunityIcons name="tennis-ball" size={22} color={theme.primary} />,
-      title: 'Track',
-      body: 'Record the key moments and statistics from your matches.',
-      image: require('@/assets/images/landing/track-matches.png'),
+      icon: <Ionicons name="mic-outline" size={22} color={theme.primary} />,
+      title: 'Type it or speak it',
+      body: "Log a match by typing it out or just talking — no notebook, no excuse to put it off.",
+    },
+    {
+      icon: <Ionicons name="cloud-outline" size={22} color={theme.primary} />,
+      title: 'Access anywhere, anytime',
+      body: "Saved to your account, not a notebook you can lose, forget at home, or never open again.",
     },
     {
       icon: <MaterialCommunityIcons name="brain" size={22} color={theme.primary} />,
-      title: 'Analyze',
-      body: 'Let AI help identify strengths, weaknesses, and patterns in your performance.',
-      image: require('@/assets/images/landing/analyze-playstyle.png'),
+      title: 'AI-generated strategies & tips',
+      body: 'Real, specific tactics generated from your actual matches and playstyle — not generic advice.',
     },
     {
-      icon: <Ionicons name="trending-up-outline" size={22} color={theme.primary} />,
-      title: 'Improve',
-      body: 'Turn match insights into better preparation for your next match.',
-      image: require('@/assets/images/landing/improve-practice-tip.png'),
+      icon: <Ionicons name="flash-outline" size={22} color={theme.primary} />,
+      title: 'Minutes, not a chore',
+      body: 'Finish logging a full match in just a couple of minutes.',
     },
   ];
 
@@ -206,66 +184,24 @@ export default function Index() {
                 {animatedEarlyUsers.toLocaleString()}+
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                players already using it in my own USTA section
-              </ThemedText>
-            </ThemedView>
-            <ThemedView style={styles.statItem}>
-              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
-                {animatedMatches.toLocaleString()}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
-                matches logged so far
+                players
               </ThemedText>
             </ThemedView>
           </ThemedView>
         </ThemedView>
 
-        {/* How it works */}
-        <ThemedView style={[styles.band, { backgroundColor: theme.backgroundSelected }]}>
-          <ThemedView style={styles.howInner}>
-            <ThemedText type="title" style={styles.sectionTitle}>
-              How it works
-            </ThemedText>
-            <ThemedView style={styles.stepsRow}>
-              {steps.map((step, i) => (
-                <Card key={step.title} style={styles.stepCard}>
-                  <ThemedView style={styles.stepNumberRow}>
-                    <ThemedView style={[styles.stepNumber, { backgroundColor: theme.primary }]}>
-                      <ThemedText style={[styles.stepNumberText, { color: theme.primaryText }]}>
-                        {i + 1}
-                      </ThemedText>
-                    </ThemedView>
-                    {step.icon}
-                  </ThemedView>
-                  <ThemedText type="smallBold">{step.title}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {step.body}
-                  </ThemedText>
-                  <ZoomableImage source={step.image} style={styles.stepImage} />
-                </Card>
-              ))}
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-
-        {/* Why I built this */}
+        {/* My Story */}
         <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
           <ThemedView style={styles.storyInner}>
             <ThemedText type="title" style={styles.sectionTitle}>
-              Built by a tennis player, for tennis players.
+              My Story
             </ThemedText>
 
             <ThemedText style={styles.storyPara}>
-              MatchMind started with a simple question:
-            </ThemedText>
-
-            <ThemedText style={[styles.storyPara, styles.storyItalic, styles.storyQuestion]}>
-              &quot;What can I learn from my last match?&quot;
-            </ThemedText>
-
-            <ThemedText style={styles.storyPara}>
-              As a junior tennis player, I wanted a better way to understand my matches beyond
-              simply looking at the final score.
+              My mom used to make me write in a tennis journal after every match. I felt tired and
+              unmotivated — the last thing I wanted to do right after playing was sit down and
+              write about it. And even when I did, no one actually analyzed the match: it just sat
+              in a notebook, easy to forget, with no way to go back and review it later.
             </ThemedText>
 
             <ThemedText style={styles.storyPara}>So I built MatchMind.</ThemedText>
@@ -276,19 +212,38 @@ export default function Index() {
           </ThemedView>
         </ThemedView>
 
-        {/* Who it's for */}
+        {/* Solutions */}
+        <ThemedView style={[styles.band, { backgroundColor: theme.backgroundSelected }]}>
+          <ThemedView style={styles.howInner}>
+            <ThemedText type="title" style={styles.sectionTitle}>
+              Solutions
+            </ThemedText>
+            <ThemedView style={styles.stepsRow}>
+              {solutions.map((solution) => (
+                <Card key={solution.title} style={styles.stepCard}>
+                  <ThemedView style={styles.cardHeaderRow}>{solution.icon}</ThemedView>
+                  <ThemedText type="smallBold">{solution.title}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {solution.body}
+                  </ThemedText>
+                </Card>
+              ))}
+            </ThemedView>
+          </ThemedView>
+        </ThemedView>
+
+        {/* Impact */}
         <ThemedView style={[styles.band, { backgroundColor: theme.background }]}>
           <ThemedView style={styles.storyInner}>
             <ThemedView style={styles.whoRow}>
               <MaterialCommunityIcons name="tennis" size={22} color={theme.primary} />
               <ThemedText type="title" style={styles.sectionTitleInline}>
-                Who it&apos;s for
+                Impact
               </ThemedText>
             </ThemedView>
             <ThemedText style={styles.storyPara}>
-              Junior competitive players who play USTA tournaments and keep running into the same
-              opponents season after season. And, let&apos;s be honest — the parents who keep
-              telling them to write a journal.
+              For tennis players who want to actually improve their matches — not just log a
+              score and move on.
             </ThemedText>
           </ThemedView>
         </ThemedView>
@@ -383,8 +338,6 @@ const styles = StyleSheet.create({
   sectionTitleInline: { fontSize: 26 },
   whoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   storyPara: { fontSize: 16, lineHeight: 25 },
-  storyItalic: { fontStyle: 'italic' },
-  storyQuestion: { fontSize: 19 },
   storyEmphasis: { fontSize: 16 },
   howInner: {
     width: '100%',
@@ -395,21 +348,7 @@ const styles = StyleSheet.create({
   },
   stepsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   stepCard: { flexBasis: 260, minWidth: 240 },
-  stepImage: {
-    width: '100%',
-    height: 180,
-    marginTop: Spacing.two,
-    borderRadius: Radius.small,
-  },
-  stepNumberRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumberText: { fontWeight: '800', fontSize: 14 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   finalCtaBand: { paddingTop: Spacing.five, paddingBottom: Spacing.four },
   finalCtaHeadline: { textAlign: 'center', fontSize: 26, marginBottom: Spacing.one },
 });
