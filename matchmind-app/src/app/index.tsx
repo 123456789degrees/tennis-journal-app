@@ -23,6 +23,7 @@ import { getCurrentPlayerId } from '@/data/storage';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useTheme } from '@/hooks/use-theme';
 import { enforceInactivityTimeout } from '@/lib/session-activity';
+import { supabase } from '@/lib/supabase';
 
 // This is the first thing anyone sees at matchmindtennis.com now — signed
 // in or not. A signed-in player gets a "Go to your matches" shortcut
@@ -78,6 +79,18 @@ export default function Index() {
   // but it can't come from a database query — there's nothing to query —
   // so it's a constant, not a growing tracker.
   const animatedEarlyUsers = useCountUp(100, statsTriggered);
+
+  // Live count of matches logged across everyone, via the security-definer
+  // site_stats() RPC (see supabase/schema.sql) since normal RLS scopes every
+  // other query to one player's own data.
+  const [matchCount, setMatchCount] = useState(0);
+  useEffect(() => {
+    supabase.rpc('site_stats').then(({ data, error }) => {
+      const row = !error && data ? data[0] : null;
+      if (row) setMatchCount(Number(row.matchCount) || 0);
+    });
+  }, []);
+  const animatedMatches = useCountUp(matchCount, statsTriggered);
 
   const goToApp = () => router.push('/home');
   const goToSignup = () => router.push('/login?mode=signup');
@@ -188,6 +201,14 @@ export default function Index() {
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
                 players using this
+              </ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.statItem}>
+              <ThemedText style={[styles.statNumber, { color: theme.primary }]}>
+                {animatedMatches.toLocaleString()}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.statLabel}>
+                matches logged so far
               </ThemedText>
             </ThemedView>
           </ThemedView>
