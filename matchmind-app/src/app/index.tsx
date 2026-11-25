@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { Wordmark } from '@/components/ui/wordmark';
+import { ZoomableImage } from '@/components/zoomable-image';
 import {
   BrandFonts,
   MaxContentWidth,
@@ -106,21 +107,33 @@ export default function Index() {
   const goToSignup = () => router.push('/login?mode=signup');
   const goToLogin = () => router.push('/login');
 
+  // Real screenshots (seeded with realistic sample data, not a live
+  // account) — proof these are actual screens, not just marketing copy.
+  // Fixed width/height per image (from each PNG's real pixel size) rather
+  // than `aspectRatio` — that style doesn't reliably resolve a height on
+  // web once it's nested a couple of flex levels deep, and left each image
+  // collapsed to 0 height with a tall blank gap in its card instead.
   const steps = [
     {
       icon: <Ionicons name="create-outline" size={22} color={theme.primary} />,
       title: 'Log it',
       body: 'Type it out or just talk — the score, your opponent, and how you played.',
+      image: require('@/assets/images/landing/how-it-works-log.png'),
+      imageHeight: 184,
     },
     {
       icon: <Ionicons name="eye-outline" size={22} color={theme.primary} />,
       title: 'Scout it',
       body: "Note what you noticed about their game while it's still fresh.",
+      image: require('@/assets/images/landing/how-it-works-scout.png'),
+      imageHeight: 247,
     },
     {
       icon: <Ionicons name="sparkles-outline" size={22} color={theme.primary} />,
       title: 'Get your plan',
       body: 'AI turns your notes into a specific practice plan for next time.',
+      image: require('@/assets/images/landing/how-it-works-plan.png'),
+      imageHeight: 144,
     },
   ];
 
@@ -382,7 +395,7 @@ export default function Index() {
                   <Card
                     key={step.title}
                     style={[
-                      styles.stepCard,
+                      styles.howStepCard,
                       { backgroundColor: theme.backgroundElement, borderColor: theme.border },
                     ]}
                   >
@@ -398,6 +411,10 @@ export default function Index() {
                     <ThemedText type="small" themeColor="textSecondary">
                       {step.body}
                     </ThemedText>
+                    <ZoomableImage
+                      source={step.image}
+                      style={[styles.stepImage, { height: step.imageHeight }]}
+                    />
                   </Card>
                 ))}
               </ThemedView>
@@ -606,6 +623,7 @@ const styles = StyleSheet.create({
   },
   stepsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   stepCard: { flexGrow: 1, flexBasis: 220, maxWidth: 300 },
+  howStepCard: { flexGrow: 1, flexBasis: 280, maxWidth: 340 },
   stepNumberRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -620,6 +638,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepNumberText: { fontFamily: BrandFonts.bodyBold, fontSize: 13 },
+  stepImage: {
+    width: '100%',
+    borderRadius: Radius.medium,
+    marginTop: Spacing.two,
+  },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   finalCtaBand: { paddingTop: Spacing.five, paddingBottom: Spacing.four },
   finalCtaHeadline: {
