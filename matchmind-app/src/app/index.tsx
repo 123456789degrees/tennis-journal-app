@@ -591,10 +591,10 @@ const styles = StyleSheet.create({
   beforeAfterItem: { alignItems: 'center', gap: Spacing.two },
   beforeAfterLabel: { letterSpacing: 1.5 },
   // Heights derived from each image's real aspect ratio (journal photo
-  // 2386x3500, app screenshot 900x881) so "contain" never letterboxes.
+  // 2781x3500, app screenshot 900x881) so "contain" never letterboxes.
   journalImage: {
     width: 280,
-    height: 410,
+    height: 352,
     borderRadius: Radius.large,
     borderWidth: 1,
   },
