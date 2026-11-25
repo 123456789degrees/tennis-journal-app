@@ -1,5 +1,15 @@
-import type { Match } from './models';
+import type { Match, ScoutingNotes } from './models';
 import type { ScoutingSummary } from './scouting-summary';
+
+// What the "how to beat them" tip knows about the PLAYER themselves, from
+// My Playstyle (see app/my-playstyle.tsx) — all optional since a player may
+// never have filled it out, in which case the tip falls back to
+// opponent-only strategy.
+export interface MyProfile {
+  playstyle?: string;
+  secondaryPlaystyle?: string;
+  scoutingNotes?: ScoutingNotes;
+}
 
 // Short, single-sentence version of the same real tennis strategy used in
 // the AI prompt (see src/app/api/opponent-scout+api.ts's PLAYSTYLE_STRATEGY)
@@ -62,12 +72,16 @@ export function generateOpponentTipHeuristic(playstyle: string, summary: Scoutin
 // Real AI path — sends every logged scouting note against this opponent
 // (chronological) to the server, which asks an LLM to synthesize a tip,
 // weighting recent matches more heavily. Falls back to the heuristic above
-// if no key is configured or the call fails for any reason.
+// if no key is configured or the call fails for any reason. `me` is the
+// player's own My Playstyle profile, if they've filled one out — lets the
+// tip account for the actual stylistic matchup (their game vs. this
+// opponent's), not just generic opponent-only strategy.
 export async function fetchOpponentTip(
   opponentName: string,
   playstyle: string,
   matches: Match[],
-  summary: ScoutingSummary
+  summary: ScoutingSummary,
+  me?: MyProfile
 ): Promise<string> {
   try {
     const oldestFirst = [...matches].sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -84,6 +98,9 @@ export async function fetchOpponentTip(
           backhand: m.scoutingNotes?.backhand ?? '',
           other: m.scoutingNotes?.other ?? '',
         })),
+        myPlaystyle: me?.playstyle,
+        mySecondaryPlaystyle: me?.secondaryPlaystyle,
+        myScouting: me?.scoutingNotes,
       }),
     });
     const data = await res.json();

@@ -10,10 +10,22 @@ interface ScoutingMatch {
   other: string;
 }
 
+interface MyScouting {
+  forehand: string;
+  serve: string;
+  backhand: string;
+  other: string;
+}
+
 interface RequestBody {
   opponentName: string;
   playstyle: string;
   matches: ScoutingMatch[]; // chronological, oldest first
+  // The player's own My Playstyle profile, if they've filled one out —
+  // undefined for either/both when they haven't.
+  myPlaystyle?: string;
+  mySecondaryPlaystyle?: string;
+  myScouting?: MyScouting;
 }
 
 // Real, standard tennis strategy for beating each playstyle category — not
@@ -35,7 +47,8 @@ const PLAYSTYLE_STRATEGY: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const { opponentName, playstyle, matches } = (await request.json()) as RequestBody;
+  const { opponentName, playstyle, matches, myPlaystyle, mySecondaryPlaystyle, myScouting } =
+    (await request.json()) as RequestBody;
 
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -62,15 +75,33 @@ export async function POST(request: Request) {
     return Response.json({ tip: null, error: 'no_data' });
   }
 
-  const prompt = `You are a tennis strategy assistant helping a junior competitive player prepare for a rematch against an opponent named ${opponentName}, whose general playstyle is "${playstyle}".${strategyText}
+  // The player's own My Playstyle profile (app/my-playstyle.tsx) — optional,
+  // since not everyone has filled it out. When present, this turns the tip
+  // from "how anyone beats a Pusher" into "how YOU, specifically, beat this
+  // Pusher," reasoning about the actual stylistic matchup instead of just
+  // the opponent in isolation.
+  const myNotesText = myScouting
+    ? `forehand="${myScouting.forehand || '—'}", serve="${myScouting.serve || '—'}", backhand="${myScouting.backhand || '—'}", other="${myScouting.other || '—'}"`
+    : null;
+  const myProfileText =
+    myPlaystyle || myNotesText
+      ? `\n\nTHE PLAYER'S OWN GAME (from their self-scouting, "My Playstyle"):${myPlaystyle ? `\n- Their own playstyle: "${myPlaystyle}"${mySecondaryPlaystyle ? ` (with some "${mySecondaryPlaystyle}" mixed in)` : ''}` : ''}${myNotesText ? `\n- Their own self-scouting notes: ${myNotesText}` : ''}`
+      : '';
+
+  const matchupInstruction = myPlaystyle
+    ? `\n\nThis is a MATCHUP, not just an opponent in isolation — reason about how a "${myPlaystyle}" player specifically should play against a "${playstyle}" player, using the player's own self-scouting notes above too (e.g. if their own backhand is weak and the opponent likes to attack short balls, that changes what's actually safe to do). If their natural instinct as a "${myPlaystyle}" would normally work against most opponents but is a bad idea against THIS specific playstyle, say so explicitly — the goal is a game plan this specific player should follow, not generic advice that ignores how they play.`
+    : '';
+
+  const prompt = `You are a tennis strategy assistant helping a junior competitive player prepare for a rematch against an opponent named ${opponentName}, whose general playstyle is "${playstyle}".${strategyText}${myProfileText}
 
 Here are the player's own scouting notes from every past match against this opponent, in chronological order (earliest first) — "other" covers mentality (tightens up under pressure, gets frustrated, etc.) as well as anything else that isn't a stroke:
 
 ${notesText || '(No scouting notes logged yet — base the tip on the general playstyle strategy above.)'}
 
-Write a short, concrete "how to beat them" tip (3-5 sentences) that blends BOTH of these together, not just one:
+Write a short, concrete "how to beat them" tip (3-5 sentences) that blends these together, not just one:
 1. The standard strategy for beating their playstyle category, adapted to make sense for this specific matchup
 2. Specific things actually observed about THIS opponent in the notes above — weight recent matches more heavily than old ones, and if the notes show they've improved or gotten worse at something over time, say so explicitly (e.g. "their backhand looked shaky early on but has gotten more reliable recently")
+3. The player's own game, if given above — tailor the advice to how THIS player specifically should execute it${matchupInstruction}
 
 If a specific note contradicts or sharpens the general playstyle strategy (e.g. a "Pusher / moonballer" whose notes say their backhand is actually a real weapon), favor what's actually been observed over the generic assumption. Give real, actionable tennis tactics — actual shot selection, court positioning, and point construction — not vague encouragement. Synthesize everything into one cohesive game plan rather than listing the strategy and the notes separately.`;
 
