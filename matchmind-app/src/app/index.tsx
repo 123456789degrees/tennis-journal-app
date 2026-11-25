@@ -362,7 +362,7 @@ export default function Index() {
                   </ThemedText>
                   <Image
                     source={require('../../assets/images/journal-before.jpg')}
-                    style={[styles.journalImage, { borderColor: theme.border }]}
+                    style={[styles.beforeAfterImage, { borderColor: theme.border }]}
                     resizeMode="contain"
                   />
                 </ThemedView>
@@ -376,7 +376,7 @@ export default function Index() {
                   </ThemedText>
                   <Image
                     source={require('../../assets/images/journal-after.png')}
-                    style={[styles.appImage, { borderColor: theme.border }]}
+                    style={[styles.beforeAfterImage, { borderColor: theme.border }]}
                     resizeMode="contain"
                   />
                 </ThemedView>
@@ -607,17 +607,12 @@ const styles = StyleSheet.create({
   },
   beforeAfterItem: { alignItems: 'center', gap: Spacing.two },
   beforeAfterLabel: { letterSpacing: 1.5 },
-  // Heights derived from each image's real aspect ratio (journal photo
-  // 2781x3500, app screenshot 900x881) so "contain" never letterboxes.
-  journalImage: {
+  // Both source images are cropped/padded to the same 2781x3350-equivalent
+  // aspect ratio (see assets/images/journal-before.jpg, journal-after.png),
+  // so both boxes below are deliberately the exact same size.
+  beforeAfterImage: {
     width: 280,
-    height: 352,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-  },
-  appImage: {
-    width: 280,
-    height: 274,
+    height: 337,
     borderRadius: Radius.large,
     borderWidth: 1,
   },
