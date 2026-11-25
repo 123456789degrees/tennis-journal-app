@@ -43,10 +43,6 @@ export default function PracticeScreen() {
   const [videoFeedback, setVideoFeedback] = useState<VideoFeedback[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
-  const [partnerDrillsOpen, setPartnerDrillsOpen] = useState(false);
-  // Videos are an optional extra now, not the main content — collapsed
-  // until the player actually asks for them, per insight.
-  const [openVideoIds, setOpenVideoIds] = useState<Record<string, boolean>>({});
   // A ref (not state) so the "already fetched?" check stays correct even
   // when called from a useFocusEffect callback holding a stale closure —
   // refs are a stable mutable box every closure reads the same live value
@@ -72,14 +68,7 @@ export default function PracticeScreen() {
     setInsights(active);
     const feedback = await listVideoFeedback(playerId);
     setVideoFeedback(feedback);
-    // Videos are fetched lazily now (see toggleVideos), not eagerly for
-    // every insight on load — they're an optional extra, not the headline.
-  }
-
-  function toggleVideos(insight: PracticeInsight) {
-    const opening = !openVideoIds[insight.id];
-    setOpenVideoIds((prev) => ({ ...prev, [insight.id]: opening }));
-    if (opening) loadVideosFor(insight, videoFeedback);
+    active.forEach((insight) => loadVideosFor(insight, feedback));
   }
 
   useFocusEffect(
@@ -121,7 +110,6 @@ export default function PracticeScreen() {
       const query = insight.drillSearchQuery || shortenForSearch(insight.suggestedDrill);
       const currentVideoIds = (videosByInsight[insight.id] ?? []).map((v) => v.id);
       const bias: ChannelBias = { ...channelBiasFrom(videoFeedback), excludeVideoIds: currentVideoIds };
-      setOpenVideoIds((prev) => ({ ...prev, [insight.id]: true }));
       setLoadingVideoIds((prev) => ({ ...prev, [insight.id]: true }));
       const videos = await fetchDrillVideos(query, bias);
       setVideosByInsight((prev) => ({ ...prev, [insight.id]: videos }));
@@ -234,7 +222,6 @@ export default function PracticeScreen() {
             const videos = videosByInsight[insight.id] ?? [];
             const ratableVideos = videos.filter((v) => v.channelId);
             const isRating = ratingId === insight.id;
-            const videosOpen = !!openVideoIds[insight.id];
             return (
               <Card key={insight.id} tint="accent">
                 <ThemedView style={styles.cardHeaderRow}>
@@ -271,44 +258,27 @@ export default function PracticeScreen() {
                   </ThemedText>
                 </ThemedView>
 
-                <Pressable style={styles.actionLink} onPress={() => toggleVideos(insight)}>
-                  <Ionicons
-                    name={videosOpen ? 'chevron-up' : 'chevron-down'}
-                    size={14}
-                    color={theme.textSecondary}
-                  />
+                {loadingVideoIds[insight.id] ? (
                   <ThemedText type="small" themeColor="textSecondary">
-                    {videosOpen ? 'Hide video ideas' : 'Show video ideas'}
+                    Finding videos...
                   </ThemedText>
-                </Pressable>
-
-                {videosOpen ? (
-                  loadingVideoIds[insight.id] ? (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      Finding videos...
-                    </ThemedText>
-                  ) : videos.length > 0 ? (
-                    <ThemedView style={styles.videoRow}>
-                      {videos.map((video) => (
-                        <Pressable key={video.id} style={styles.videoCard} {...webLinkProps(video.url)}>
-                          {video.thumbnail ? (
-                            <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
-                          ) : (
-                            <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
-                              <Ionicons name="logo-youtube" size={22} color="#FF0000" />
-                            </ThemedView>
-                          )}
-                          <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
-                            {video.title}
-                          </ThemedText>
-                        </Pressable>
-                      ))}
-                    </ThemedView>
-                  ) : (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      No videos found for this one.
-                    </ThemedText>
-                  )
+                ) : videos.length > 0 ? (
+                  <ThemedView style={styles.videoRow}>
+                    {videos.map((video) => (
+                      <Pressable key={video.id} style={styles.videoCard} {...webLinkProps(video.url)}>
+                        {video.thumbnail ? (
+                          <Image source={{ uri: video.thumbnail }} style={styles.videoThumb} />
+                        ) : (
+                          <ThemedView style={[styles.videoThumb, styles.videoThumbFallback]}>
+                            <Ionicons name="logo-youtube" size={22} color="#FF0000" />
+                          </ThemedView>
+                        )}
+                        <ThemedText type="small" numberOfLines={2} style={styles.videoTitle}>
+                          {video.title}
+                        </ThemedText>
+                      </Pressable>
+                    ))}
+                  </ThemedView>
                 ) : null}
 
                 {isRating ? (
@@ -409,44 +379,20 @@ export default function PracticeScreen() {
           })
         )}
 
-        <Pressable
-          style={styles.partnerDrillsHeader}
-          onPress={() => setPartnerDrillsOpen((open) => !open)}
-        >
-          <ThemedView style={styles.titleLeft}>
-            <Ionicons name="people-outline" size={20} color={theme.primary} />
-            <ThemedText type="smallBold">Partner drills &amp; tiebreak twists</ThemedText>
-          </ThemedView>
-          <Ionicons
-            name={partnerDrillsOpen ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={theme.textSecondary}
-          />
-        </Pressable>
-
-        {partnerDrillsOpen ? (
-          <ThemedView style={styles.partnerDrillsBody}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Live-ball games to play with a hitting partner any time — not tied to your current
-              nudge above.
-            </ThemedText>
-            {(['Live-ball games', 'Tiebreak twists'] as const).map((category) => (
-              <ThemedView key={category} style={styles.partnerDrillCategory}>
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
-                  {category}
-                </ThemedText>
-                {PARTNER_DRILLS.filter((d) => d.category === category).map((drill) => (
-                  <Card key={drill.id} style={styles.partnerDrillCard}>
-                    <ThemedText type="smallBold">{drill.title}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {drill.description}
-                    </ThemedText>
-                  </Card>
-                ))}
-              </ThemedView>
-            ))}
-          </ThemedView>
-        ) : null}
+        <ThemedView style={styles.partnerDrillsHeader}>
+          <Ionicons name="people-outline" size={20} color={theme.primary} />
+          <ThemedText type="smallBold">Rally ideas</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.partnerDrillsBody}>
+          {PARTNER_DRILLS.map((drill) => (
+            <Card key={drill.id} style={styles.partnerDrillCard}>
+              <ThemedText type="smallBold">{drill.title}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {drill.description}
+              </ThemedText>
+            </Card>
+          ))}
+        </ThemedView>
 
         <Copyright />
       </ScrollView>
@@ -511,11 +457,9 @@ const styles = StyleSheet.create({
   partnerDrillsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.two,
+    gap: Spacing.one,
     marginTop: Spacing.two,
   },
-  partnerDrillsBody: { gap: Spacing.three },
-  partnerDrillCategory: { gap: Spacing.two },
+  partnerDrillsBody: { gap: Spacing.two },
   partnerDrillCard: { gap: Spacing.half },
 });

@@ -96,8 +96,8 @@ export const Radius = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-// 980, not the old 920 — the header nav needed the extra room once "My
-// Playstyle" became a 4th persistent nav link (measured: the header row's
-// true natural width with every label showing is ~952px), and every page's
-// body content shares this same constant so header/body stay aligned.
-export const MaxContentWidth = 980;
+// 1140 — the header nav needed more room again once "Matches" became a 5th
+// persistent nav link (measured: the header row's true natural width with
+// every label showing is ~1083px), and every page's body content shares
+// this same constant so header/body stay aligned.
+export const MaxContentWidth = 1140;

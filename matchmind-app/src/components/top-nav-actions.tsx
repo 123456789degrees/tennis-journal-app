@@ -19,17 +19,16 @@ import { useTheme } from '@/hooks/use-theme';
 // laptop), there's no room for icon+label nav links and a full "Log a
 // match" pill next to the logo/title -- they were overflowing straight off
 // the screen. Everything drops to icon-only past this point.
-const NARROW_BREAKPOINT = 820;
+const NARROW_BREAKPOINT = 980;
 
 interface NavItem {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  href: '/select-opponent' | '/practice' | '/my-playstyle' | '/settings';
+  href: '/match-history' | '/select-opponent' | '/practice' | '/my-playstyle' | '/settings';
 }
 
-// No "All matches" link — Home itself is the all-matches list now, and the
-// logo is always the way back to Home.
 const ITEMS: NavItem[] = [
+  { label: 'Matches', icon: 'list-outline', href: '/match-history' },
   { label: 'Opponents', icon: 'people-outline', href: '/select-opponent' },
   { label: 'Practice', icon: 'sparkles-outline', href: '/practice' },
   { label: 'My Playstyle', icon: 'person-outline', href: '/my-playstyle' },
