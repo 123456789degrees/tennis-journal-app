@@ -77,9 +77,9 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.one,
     ...Platform.select({
-      web: { boxShadow: '0 2px 10px rgba(22, 36, 26, 0.08)' },
+      web: { boxShadow: '0 2px 10px rgba(14, 59, 46, 0.08)' },
       default: {
-        shadowColor: '#16241A',
+        shadowColor: '#0E3B2E',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
@@ -88,12 +88,12 @@ const styles = StyleSheet.create({
     }),
   },
   restShadowWeb: {
-    boxShadow: '0 2px 10px rgba(22, 36, 26, 0.08)',
+    boxShadow: '0 2px 10px rgba(14, 59, 46, 0.08)',
     transitionProperty: 'box-shadow, border-color',
     transitionDuration: '150ms',
   } as object,
   hoverShadowWeb: {
-    boxShadow: '0 10px 24px rgba(22, 36, 26, 0.18)',
+    boxShadow: '0 10px 24px rgba(14, 59, 46, 0.18)',
     transitionProperty: 'box-shadow, border-color',
     transitionDuration: '150ms',
   } as object,

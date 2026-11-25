@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
+import { Wordmark } from '@/components/ui/wordmark';
 import { Radius, Spacing } from '@/constants/theme';
 import { createPlayer } from '@/data/storage';
 import { useTheme } from '@/hooks/use-theme';
@@ -94,7 +95,8 @@ export default function LoginScreen() {
       >
       <ThemedView style={[styles.container, { backgroundColor: theme.primary }]}>
         <ThemedView style={styles.logoWrap}>
-          <Logo size={220} />
+          <Logo size={140} />
+          <Wordmark size={30} />
         </ThemedView>
         <ThemedText type="small" style={[styles.tagline, { color: theme.primaryText }]}>
           Your matches, captured in seconds.
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
   },
-  logoWrap: { alignItems: 'center', marginBottom: Spacing.two },
+  logoWrap: { alignItems: 'center', gap: Spacing.one, marginBottom: Spacing.two },
   tagline: { textAlign: 'center', marginBottom: Spacing.four, opacity: 0.9 },
   copyright: { textAlign: 'center', marginTop: Spacing.four, color: 'rgba(255,255,255,0.6)' },
   card: {

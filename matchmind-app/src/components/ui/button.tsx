@@ -181,10 +181,10 @@ export function Button({
 
 const styles = StyleSheet.create({
   shadowBase: { borderRadius: Radius.medium },
-  shadowRestWeb: { boxShadow: '0 3px 10px rgba(22, 36, 26, 0.16)', transitionProperty: 'box-shadow', transitionDuration: '150ms' } as any,
-  shadowHoverWeb: { boxShadow: '0 8px 20px rgba(22, 36, 26, 0.26)', transitionProperty: 'box-shadow', transitionDuration: '150ms' } as any,
+  shadowRestWeb: { boxShadow: '0 3px 10px rgba(14, 59, 46, 0.16)', transitionProperty: 'box-shadow', transitionDuration: '150ms' } as any,
+  shadowHoverWeb: { boxShadow: '0 8px 20px rgba(14, 59, 46, 0.26)', transitionProperty: 'box-shadow', transitionDuration: '150ms' } as any,
   shadowNative: {
-    shadowColor: '#16241A',
+    shadowColor: '#0E3B2E',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.16,
     shadowRadius: 6,

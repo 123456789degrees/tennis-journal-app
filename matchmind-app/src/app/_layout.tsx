@@ -1,4 +1,16 @@
+import {
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+} from '@expo-google-fonts/bricolage-grotesque';
+import { InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { Analytics } from '@vercel/analytics/react';
+import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -8,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { ThemedText } from '@/components/themed-text';
 import { Logo } from '@/components/ui/logo';
+import { Wordmark } from '@/components/ui/wordmark';
 import { Colors, Spacing } from '@/constants/theme';
 
 // Site-wide gate while actively editing — blocks every route, including
@@ -18,7 +31,8 @@ const MAINTENANCE_MODE = false;
 function MaintenanceScreen({ theme }: { theme: typeof Colors.light | typeof Colors.dark }) {
   return (
     <SafeAreaView style={[styles.maintenanceRoot, { backgroundColor: theme.primary }]}>
-      <Logo size={100} />
+      <Logo size={90} />
+      <Wordmark size={26} />
       <ThemedText type="title" style={[styles.maintenanceTitle, { color: theme.primaryText }]}>
         Under construction
       </ThemedText>
@@ -34,12 +48,21 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
-  // The wordmark is baked into the logo artwork itself now (see
-  // components/ui/logo.tsx) — no custom font to load before showing the
-  // app, so hide the splash as soon as this mounts.
+  const [fontsLoaded] = useFonts({
+    BricolageGrotesque_800ExtraBold,
+    BricolageGrotesque_700Bold,
+    InstrumentSerif_400Regular_Italic,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
+
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
 
   if (MAINTENANCE_MODE) {
     return <MaintenanceScreen theme={theme} />;

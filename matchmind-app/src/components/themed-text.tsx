@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { BrandFonts, Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
@@ -31,36 +31,45 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
+  // Plus Jakarta Sans for body/UI, Bricolage Grotesque for headlines — the
+  // brand's type system (see constants/theme.ts's BrandFonts). A specific
+  // static-weight font file is loaded for each of these, so fontFamily
+  // alone carries the weight — no separate fontWeight alongside it, which
+  // on web can trigger a synthetic extra-bold on top of an already-bold font.
   small: {
+    fontFamily: BrandFonts.bodyMedium,
     fontSize: 16,
     lineHeight: 23,
-    fontWeight: 500,
   },
   smallBold: {
+    fontFamily: BrandFonts.bodyBold,
     fontSize: 16,
     lineHeight: 23,
-    fontWeight: 700,
   },
   default: {
+    fontFamily: BrandFonts.bodyMedium,
     fontSize: 18,
     lineHeight: 27,
-    fontWeight: 500,
   },
   title: {
+    fontFamily: BrandFonts.displayExtraBold,
     fontSize: 54,
-    fontWeight: 600,
     lineHeight: 58,
+    letterSpacing: -0.02,
   },
   subtitle: {
+    fontFamily: BrandFonts.displayBold,
     fontSize: 36,
     lineHeight: 48,
-    fontWeight: 600,
+    letterSpacing: -0.015,
   },
   link: {
+    fontFamily: BrandFonts.bodySemiBold,
     lineHeight: 32,
     fontSize: 16,
   },
   linkPrimary: {
+    fontFamily: BrandFonts.bodySemiBold,
     lineHeight: 32,
     fontSize: 16,
     color: '#3c87f7',

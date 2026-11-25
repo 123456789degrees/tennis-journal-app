@@ -1,6 +1,9 @@
 /**
- * MatchMind design tokens — tennis court green + tennis-ball yellow-green,
- * kept clean/flat rather than gaudy so it still reads as professional.
+ * MatchMind design tokens — "Court Green" (#0E3B2E) + "Optic Ball" lime
+ * (#D9F23E), from the logo & type system: a tennis ball rising from an
+ * open journal. Dark mode's values are extrapolated (brighter primary/
+ * accent for contrast on a dark page) since the source design only
+ * specified a light theme.
  */
 
 import '@/global.css';
@@ -9,32 +12,32 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#16241A',
-    textSecondary: '#5C6E56',
-    background: '#F8FAF0',
-    backgroundElement: '#FFFFFF',
-    backgroundSelected: '#E4F1B8',
-    border: '#D8E3C4',
-    primary: '#2E7D32',
-    primaryText: '#FFFFFF',
-    accent: '#C6E600',
-    accentText: '#16241A',
-    success: '#2E7D32',
+    text: '#0E3B2E',
+    textSecondary: '#3D5E52',
+    background: '#F3F5EE',
+    backgroundElement: '#E6EBDF',
+    backgroundSelected: '#EEF7C9',
+    border: '#C9D3C3',
+    primary: '#0E3B2E',
+    primaryText: '#F3F5EE',
+    accent: '#D9F23E',
+    accentText: '#0E3B2E',
+    success: '#0E3B2E',
     danger: '#C0392B',
     shadow: '#000000',
   },
   dark: {
-    text: '#EFF5E6',
-    textSecondary: '#A9BC9E',
-    background: '#101A0D',
-    backgroundElement: '#1C2A17',
-    backgroundSelected: '#2F4321',
-    border: '#33441F',
-    primary: '#5FBF54',
-    primaryText: '#0B1608',
-    accent: '#D4E157',
-    accentText: '#16241A',
-    success: '#5FBF54',
+    text: '#F3F5EE',
+    textSecondary: '#9CB3A5',
+    background: '#0A1711',
+    backgroundElement: '#142019',
+    backgroundSelected: '#2B3D1E',
+    border: '#2A3B30',
+    primary: '#3DAE7A',
+    primaryText: '#0A1711',
+    accent: '#E3F56A',
+    accentText: '#0E3B2E',
+    success: '#3DAE7A',
     danger: '#E57368',
     shadow: '#000000',
   },
@@ -46,13 +49,13 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 // (which ThemedText/ThemedView use to type plain string color props).
 export const Gradients = {
   light: {
-    primary: ['#3E9142', '#1F5C22'] as const,
-    accent: ['#D8F23A', '#B0D400'] as const,
+    primary: ['#1C5443', '#0A2A20'] as const,
+    accent: ['#E6FF6B', '#C3E62E'] as const,
     danger: ['#D6564A', '#A5301F'] as const,
   },
   dark: {
-    primary: ['#71D467', '#3F9438'] as const,
-    accent: ['#E3EC6E', '#C4D62E'] as const,
+    primary: ['#4FC98D', '#2E8F63'] as const,
+    accent: ['#ECFA91', '#CFE84A'] as const,
     danger: ['#EE8A7F', '#C6493B'] as const,
   },
 } as const;
@@ -77,6 +80,22 @@ export const Fonts = Platform.select({
     mono: 'var(--font-mono)',
   },
 });
+
+// The brand's own typefaces, from the logo & type system: Bricolage
+// Grotesque for headlines/buttons/scores, italic Instrument Serif for
+// accent words and quotes, Plus Jakarta Sans for body/UI. Loaded via
+// useFonts() in app/_layout.tsx (see @expo-google-fonts/*) — these string
+// values must match those packages' export names exactly, since that's the
+// font-family name each one registers under.
+export const BrandFonts = {
+  displayExtraBold: 'BricolageGrotesque_800ExtraBold',
+  displayBold: 'BricolageGrotesque_700Bold',
+  serifItalic: 'InstrumentSerif_400Regular_Italic',
+  body: 'PlusJakartaSans_400Regular',
+  bodyMedium: 'PlusJakartaSans_500Medium',
+  bodySemiBold: 'PlusJakartaSans_600SemiBold',
+  bodyBold: 'PlusJakartaSans_700Bold',
+} as const;
 
 export const Spacing = {
   half: 4,

@@ -17,7 +17,8 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Wordmark } from '@/components/ui/wordmark';
+import { BrandFonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getCurrentPlayerId } from '@/data/storage';
 import { useCountUp } from '@/hooks/use-count-up';
 import { useTheme } from '@/hooks/use-theme';
@@ -115,10 +116,8 @@ export default function Index() {
         <ThemedView style={[styles.band, styles.heroBand, { backgroundColor: theme.primary }]}>
           <ThemedView style={styles.topNav}>
             <ThemedView style={styles.topNavBrand}>
-              <Logo size={36} />
-              <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-                MatchMind
-              </ThemedText>
+              <Logo size={30} />
+              <Wordmark size={20} />
             </ThemedView>
             <Pressable
               style={[styles.topNavButton, { borderColor: theme.primaryText }]}
@@ -131,12 +130,16 @@ export default function Index() {
           </ThemedView>
 
           <ThemedView style={styles.heroInner}>
-            <Logo size={120} />
+            <Logo size={100} />
+            <Wordmark size={34} />
             <ThemedText type="title" style={[styles.heroHeadline, { color: theme.primaryText }]}>
               Mind Over Match.
             </ThemedText>
             <ThemedText style={[styles.heroTagline, { color: theme.primaryText }]}>
-              Turn every tennis match into a smarter practice plan.
+              Turn every tennis match into a smarter{' '}
+              <ThemedText style={[styles.heroTaglineAccent, { color: theme.accent }]}>
+                practice plan.
+              </ThemedText>
             </ThemedText>
             <ThemedText style={[styles.heroSubhead, { color: theme.primaryText }]}>
               MatchMind helps tennis players record their matches, understand their performance,
@@ -306,10 +309,14 @@ const styles = StyleSheet.create({
   heroHeadline: { textAlign: 'center', fontSize: 34, lineHeight: 40 },
   heroTagline: {
     textAlign: 'center',
+    fontFamily: BrandFonts.bodyBold,
     fontSize: 19,
     lineHeight: 26,
-    fontWeight: '700',
     maxWidth: 480,
+  },
+  heroTaglineAccent: {
+    fontFamily: BrandFonts.serifItalic,
+    fontSize: 22,
   },
   heroSubhead: { textAlign: 'center', fontSize: 17, lineHeight: 24, opacity: 0.95, maxWidth: 480 },
   heroButtons: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
@@ -325,7 +332,7 @@ const styles = StyleSheet.create({
     gap: Spacing.six,
   },
   statItem: { alignItems: 'center', minWidth: 160, gap: Spacing.one },
-  statNumber: { fontSize: 44, fontWeight: '800', lineHeight: 50 },
+  statNumber: { fontFamily: BrandFonts.displayExtraBold, fontSize: 44, lineHeight: 50 },
   statLabel: { textAlign: 'center' },
   storyInner: {
     width: '100%',
